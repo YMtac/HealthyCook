@@ -23,6 +23,7 @@ router.get("/favorites", async (_req, res) => {
         id: r.id,
         name: r.name,
         emoji: r.emoji,
+        imageUrl: r.imageUrl ?? null,
         timeMinutes: r.timeMinutes,
         difficulty: r.difficulty,
         category: r.category,

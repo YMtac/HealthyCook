@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ChefHat, ShoppingCart, Compass, Search, Plus, ArrowLeft, Heart, Check, X, Clock, Flame, Loader2 } from "lucide-react";
+import { ChefHat, ShoppingCart, Compass, Search, Plus, ArrowLeft, Heart, Check, X, Clock, Flame, Loader2, Minus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
   useListIngredients, useCreateIngredient, useDeleteIngredient, getListIngredientsQueryKey,
@@ -193,78 +193,177 @@ function ScreenWrapper({ children, isActive }: { children: React.ReactNode, isAc
   );
 }
 
+const INGREDIENT_SUGGESTIONS = [
+  { name: "Tomato", emoji: "🍅" }, { name: "Eggs", emoji: "🥚" }, { name: "Rice", emoji: "🍚" },
+  { name: "Garlic", emoji: "🧄" }, { name: "Butter", emoji: "🧈" }, { name: "Onion", emoji: "🧅" },
+  { name: "Carrot", emoji: "🥕" }, { name: "Chicken", emoji: "🍗" }, { name: "Pasta", emoji: "🍝" },
+  { name: "Milk", emoji: "🥛" }, { name: "Cheese", emoji: "🧀" }, { name: "Lemon", emoji: "🍋" },
+  { name: "Spinach", emoji: "🥬" }, { name: "Potato", emoji: "🥔" }, { name: "Mushroom", emoji: "🍄" },
+  { name: "Broccoli", emoji: "🥦" }, { name: "Bell Pepper", emoji: "🫑" }, { name: "Ginger", emoji: "🫚" },
+  { name: "Olive Oil", emoji: "🫒" }, { name: "Salmon", emoji: "🐟" }, { name: "Beef", emoji: "🥩" },
+  { name: "Avocado", emoji: "🥑" }, { name: "Cucumber", emoji: "🥒" }, { name: "Corn", emoji: "🌽" },
+  { name: "Soy Sauce", emoji: "🫙" }, { name: "Tofu", emoji: "🫙" }, { name: "Noodles", emoji: "🍜" },
+  { name: "Bread", emoji: "🍞" }, { name: "Sweet Potato", emoji: "🍠" }, { name: "Yogurt", emoji: "🥛" },
+  { name: "Shrimp", emoji: "🦐" }, { name: "Pork", emoji: "🥩" }, { name: "Tuna", emoji: "🐟" },
+  { name: "Peanuts", emoji: "🥜" }, { name: "Flour", emoji: "🌾" }, { name: "Coconut Milk", emoji: "🥥" },
+  { name: "Scallions", emoji: "🌿" }, { name: "Chili", emoji: "🌶️" }, { name: "Sesame Oil", emoji: "🫙" },
+  { name: "Sugar", emoji: "🍬" }, { name: "Almonds", emoji: "🌰" }, { name: "Peas", emoji: "🫛" },
+];
+
 function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
   const { data: ingredients = [], isLoading } = useListIngredients();
   const createIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
   const queryClient = useQueryClient();
   const [inputValue, setInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [ingredientQtys, setIngredientQtys] = useState<Record<number, number>>({});
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-    createIngredient.mutate({ data: { name: inputValue, emoji: "🥬" } }, {
+  const existingNames = new Set(ingredients.map(i => i.name.toLowerCase()));
+  const filtered = inputValue.trim().length > 0
+    ? INGREDIENT_SUGGESTIONS.filter(s =>
+        s.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+        !existingNames.has(s.name.toLowerCase())
+      ).slice(0, 6)
+    : [];
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
+          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const handleAdd = (name: string, emoji: string) => {
+    if (!name.trim() || existingNames.has(name.toLowerCase())) return;
+    createIngredient.mutate({ data: { name, emoji } }, {
       onSuccess: () => {
         setInputValue("");
+        setShowSuggestions(false);
         queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() });
       }
     });
   };
 
-  const handleQuickAdd = (name: string, emoji: string) => {
-    createIngredient.mutate({ data: { name, emoji } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() })
-    });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+    const match = INGREDIENT_SUGGESTIONS.find(s => s.name.toLowerCase() === inputValue.toLowerCase());
+    handleAdd(inputValue.trim(), match?.emoji ?? "🥬");
+  };
+
+  const updateQty = (id: number, delta: number) => {
+    setIngredientQtys(prev => ({ ...prev, [id]: Math.max(1, (prev[id] ?? 1) + delta) }));
   };
 
   return (
     <div className="flex flex-col h-full p-6 relative max-w-2xl mx-auto w-full">
       <header className="mb-8 pt-4 flex justify-between items-start">
         <div>
-          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">HealthyCook</h1>
+          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">SmartCook</h1>
           <p className="font-['Karla'] text-[#6b6560]">What's in your fridge?</p>
         </div>
         <UserAuthButton navigate={(p) => window.location.href = p} />
       </header>
       <div className="flex-1">
-        <form onSubmit={handleAdd} className="mb-6">
-          <input 
-            type="text" 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type an ingredient..." 
-            className="w-full bg-transparent border-b-2 border-[#d4c4a8] pb-2 focus:outline-none focus:border-[#c67d5a] text-lg transition-colors text-[#2d2a26] placeholder:text-[#d4c4a8] font-['Karla']"
-            data-testid="input-ingredient"
-          />
-        </form>
+        <div className="mb-6 relative">
+          <form onSubmit={handleSubmit}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => { setInputValue(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Type an ingredient..."
+              className="w-full bg-transparent border-b-2 border-[#d4c4a8] pb-2 focus:outline-none focus:border-[#c67d5a] text-lg transition-colors text-[#2d2a26] placeholder:text-[#d4c4a8] font-['Karla']"
+              data-testid="input-ingredient"
+              autoComplete="off"
+            />
+          </form>
+          <AnimatePresence>
+            {showSuggestions && filtered.length > 0 && (
+              <motion.div
+                ref={suggestionsRef}
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                transition={{ type: 'spring', damping: 20, stiffness: 400 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-[#f5f0e6] shadow-xl z-30 overflow-hidden border border-[#e8e0d4]"
+                style={{ borderRadius: '16px 24px 24px 16px' }}
+              >
+                {filtered.map((s, i) => (
+                  <button
+                    key={s.name}
+                    type="button"
+                    onMouseDown={() => handleAdd(s.name, s.emoji)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#e8e0d4] transition-colors text-left font-['Karla'] text-[#2d2a26]"
+                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f0ebe3' : 'none' }}
+                  >
+                    <span className="text-xl w-8 text-center">{s.emoji}</span>
+                    <span className="font-medium">{s.name}</span>
+                    <span className="ml-auto text-[#c67d5a] text-xs opacity-60">+ Add</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        <div className="mb-8 min-h-[100px]">
+        <div className="mb-8 min-h-[80px]">
           {isLoading ? (
             <div className="flex gap-2"><div className="h-8 w-24 bg-[#e8a889]/30 animate-pulse rounded-full" /></div>
           ) : (
             <div className="flex flex-wrap gap-2">
               <AnimatePresence>
-                {ingredients.map(ing => (
-                  <motion.span 
-                    key={ing.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="inline-flex items-center gap-2 bg-[#b8ccb8] text-[#2d2a26] px-4 py-2 text-sm font-['Karla'] font-medium"
-                    style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}
-                  >
-                    <span className="text-lg">{ing.emoji}</span> {ing.name} 
-                    <button 
-                      onClick={() => deleteIngredient.mutate({ id: ing.id }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() })
-                      })}
-                      className="ml-1 opacity-50 hover:opacity-100 transition-opacity"
-                      data-testid={`button-delete-ingredient-${ing.id}`}
+                {ingredients.map(ing => {
+                  const qty = ingredientQtys[ing.id] ?? 1;
+                  return (
+                    <motion.div
+                      key={ing.id}
+                      initial={{ opacity: 0, scale: 0.5, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.5, y: -8 }}
+                      transition={{ type: 'spring', damping: 14, stiffness: 280 }}
+                      layout
                     >
-                      <X size={14} />
-                    </button>
-                  </motion.span>
-                ))}
+                      <div
+                        className="inline-flex items-center gap-1.5 bg-[#b8ccb8] text-[#2d2a26] pl-3 pr-2 py-2 text-sm font-['Karla'] font-medium select-none"
+                        style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}
+                      >
+                        <span className="text-base">{ing.emoji}</span>
+                        <span>{ing.name}</span>
+                        <div className="flex items-center gap-0.5 ml-1 bg-[#8fa68f]/20 px-1 py-0.5 rounded-full">
+                          <button
+                            onClick={() => updateQty(ing.id, -1)}
+                            className="w-4 h-4 flex items-center justify-center hover:text-[#c67d5a] transition-colors"
+                            data-testid={`button-qty-minus-${ing.id}`}
+                          ><Minus size={10} strokeWidth={3} /></button>
+                          <span className="text-xs font-bold min-w-[12px] text-center text-[#2d2a26]">{qty}</span>
+                          <button
+                            onClick={() => updateQty(ing.id, 1)}
+                            className="w-4 h-4 flex items-center justify-center hover:text-[#c67d5a] transition-colors"
+                            data-testid={`button-qty-plus-${ing.id}`}
+                          ><Plus size={10} strokeWidth={3} /></button>
+                        </div>
+                        <button
+                          onClick={() => deleteIngredient.mutate({ id: ing.id }, {
+                            onSuccess: () => queryClient.invalidateQueries({ queryKey: getListIngredientsQueryKey() })
+                          })}
+                          className="ml-0.5 opacity-40 hover:opacity-100 transition-opacity"
+                          data-testid={`button-delete-ingredient-${ing.id}`}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           )}
@@ -274,16 +373,15 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
           <h3 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a] mb-4">Quick Add</h3>
           <div className="flex flex-wrap gap-2">
             {[
-              { name: "Tomato", emoji: "🍅" },
-              { name: "Eggs", emoji: "🥚" },
-              { name: "Rice", emoji: "🍚" },
-              { name: "Garlic", emoji: "🧄" },
+              { name: "Tomato", emoji: "🍅" }, { name: "Eggs", emoji: "🥚" },
+              { name: "Rice", emoji: "🍚" }, { name: "Garlic", emoji: "🧄" },
               { name: "Butter", emoji: "🧈" }
             ].map(item => (
-              <button 
+              <button
                 key={item.name}
-                onClick={() => handleQuickAdd(item.name, item.emoji)}
-                className="bg-[#d4c4a8] text-[#2d2a26] px-4 py-2 text-sm transition-transform hover:scale-105 font-['Karla'] font-medium"
+                onClick={() => handleAdd(item.name, item.emoji)}
+                disabled={existingNames.has(item.name.toLowerCase())}
+                className="bg-[#d4c4a8] text-[#2d2a26] px-4 py-2 text-sm transition-all hover:scale-105 font-['Karla'] font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
                 style={{ borderRadius: '50% 30% 50% 30% / 30% 50% 30% 50%' }}
                 data-testid={`button-quick-add-${item.name}`}
               >
@@ -294,7 +392,7 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
         </div>
       </div>
       <div className="fixed md:absolute bottom-24 md:bottom-6 left-6 right-6 md:left-0 md:right-0 max-w-[382px] mx-auto z-20">
-        <button 
+        <button
           onClick={() => navigate({ name: 'preferences' })}
           disabled={ingredients.length === 0}
           className="w-full bg-[#8fa68f] text-white py-4 font-['Karla'] font-semibold text-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none transition-all btn-primary"
@@ -465,7 +563,7 @@ function RecipeOutputScreen({ recipeId, navigate, onBack }: { recipeId: number, 
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-6 right-6 max-w-[382px] mx-auto z-20 flex flex-col gap-3">
+      <div className="fixed bottom-24 md:bottom-6 left-6 right-6 max-w-[382px] mx-auto z-20 flex flex-col gap-3">
         <button 
           onClick={onBack}
           className="w-full text-[#c67d5a] py-3 font-['Karla'] font-medium text-base hover:bg-[#f0ebe3] transition-colors btn-secondary"
@@ -686,7 +784,7 @@ function RecipeDetailScreen({ recipeId, onBack }: { recipeId: number, onBack: ()
         </div>
       </div>
 
-      <div className="fixed md:absolute bottom-6 left-6 right-6 max-w-[382px] mx-auto z-20">
+      <div className="fixed bottom-24 md:bottom-6 left-6 right-6 max-w-[382px] mx-auto z-20">
         <button 
           onClick={toggleFavorite}
           className="w-full bg-[#8fa68f] text-white py-4 font-['Karla'] font-semibold text-lg shadow-lg flex items-center justify-center gap-2 btn-primary"
@@ -887,17 +985,19 @@ function ShopTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
           <h2 className="text-[28px] font-['Fraunces'] italic text-[#2d2a26] mb-2">Your Kitchen Needs</h2>
           <p className="text-sm font-['Karla'] text-[#6b6560] italic mb-6">{recommendations.insight}</p>
           
-          <div className="flex gap-4 overflow-x-auto pb-6 pt-2 px-2 -mx-2 snap-x snap-mandatory hide-scrollbar">
+          <div className="space-y-3">
             {recommendations.ingredients.map((rec, i) => (
-              <div key={i} className="reveal-card min-w-[200px] shrink-0 bg-[#f5f0e6] p-5 shadow-sm snap-center flex flex-col" style={{ borderRadius: '20px 40px 20px 40px' }}>
-                <div className="w-12 h-12 bg-[#faf8f5] flex items-center justify-center text-2xl mb-4" style={{ borderRadius: '50% 40% 60% 50% / 50% 60% 40% 50%' }}>
+              <div key={i} className="reveal-card bg-[#f5f0e6] p-4 shadow-sm flex items-center gap-4" style={{ borderRadius: '20px 40px 20px 40px' }}>
+                <div className="w-12 h-12 bg-[#faf8f5] flex items-center justify-center text-2xl shrink-0" style={{ borderRadius: '50% 40% 60% 50% / 50% 60% 40% 50%' }}>
                   {rec.emoji}
                 </div>
-                <h3 className="font-['Fraunces'] font-bold text-[#2d2a26] text-lg mb-1">{rec.name}</h3>
-                <p className="text-[#6b6560] text-xs font-['Karla'] mb-4 flex-1">{rec.reason}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-['Fraunces'] font-bold text-[#2d2a26] text-base leading-tight mb-0.5">{rec.name}</h3>
+                  <p className="text-[#6b6560] text-xs font-['Karla'] leading-snug line-clamp-2">{rec.reason}</p>
+                </div>
                 <button 
                   onClick={() => createShoppingItem.mutate({ data: { name: rec.name, emoji: rec.emoji, quantity: "1", category: rec.category } }, { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListShoppingItemsQueryKey() }) })}
-                  className="mt-auto self-start text-[11px] uppercase tracking-widest font-['Karla'] bg-[#8fa68f] text-white px-4 py-2"
+                  className="shrink-0 text-[11px] uppercase tracking-widest font-['Karla'] bg-[#8fa68f] text-white px-3 py-2"
                   style={{ borderRadius: '50px 20px 50px 20px' }}
                 >
                   + Add
@@ -1043,7 +1143,7 @@ function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
     return () => observer.disconnect();
   }, [recipes]);
 
-  const categories = ["All", "Breakfast", "Lunch", "Dinner", "Snack", "Dessert"];
+  const categories = ["All", "Asian", "Breakfast", "Italian", "Vegan", "General"];
 
   return (
     <div className="flex flex-col h-full p-6 pb-32 bg-transparent overflow-y-auto relative w-full max-w-5xl mx-auto">
@@ -1108,7 +1208,7 @@ function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
                   </div>
                 )}
                 {recipe.imageUrl ? (
-                  <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover absolute inset-0 mix-blend-multiply" />
+                  <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover absolute inset-0" />
                 ) : (
                   <span className="text-6xl group-hover:scale-110 transition-transform duration-500">{recipe.emoji}</span>
                 )}
@@ -1186,7 +1286,7 @@ function FavoritesScreen({ navigate }: { navigate: (screen: ScreenState) => void
                   <Heart size={16} className="fill-[#c67d5a] text-[#c67d5a]" />
                 </div>
                 {recipe.imageUrl ? (
-                  <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover absolute inset-0 mix-blend-multiply" />
+                  <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover absolute inset-0" />
                 ) : (
                   <span className="text-6xl group-hover:scale-110 transition-transform duration-500">{recipe.emoji}</span>
                 )}

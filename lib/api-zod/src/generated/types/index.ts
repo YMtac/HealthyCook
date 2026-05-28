@@ -17,6 +17,8 @@ export * from './recipe';
 export * from './recipeIngredient';
 export * from './recipeStep';
 export * from './recipeSummary';
+export * from './recommendations';
+export * from './recommendedIngredient';
 export * from './shoppingItem';
 export * from './shoppingItemInput';
 export * from './shoppingItemUpdate';

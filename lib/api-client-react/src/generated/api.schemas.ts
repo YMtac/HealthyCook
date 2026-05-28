@@ -43,6 +43,8 @@ export interface Recipe {
   id: number;
   name: string;
   emoji: string;
+  /** @nullable */
+  imageUrl?: string | null;
   timeMinutes: number;
   difficulty: string;
   category: string;
@@ -58,6 +60,8 @@ export interface RecipeSummary {
   id: number;
   name: string;
   emoji: string;
+  /** @nullable */
+  imageUrl?: string | null;
   timeMinutes: number;
   difficulty: string;
   category: string;
@@ -106,6 +110,20 @@ export interface ShoppingItemUpdate {
 export interface FavoriteStatus {
   recipeId: number;
   isFavorited: boolean;
+}
+
+export interface RecommendedIngredient {
+  name: string;
+  emoji: string;
+  reason: string;
+  category: string;
+  /** @nullable */
+  nutrient?: string | null;
+}
+
+export interface Recommendations {
+  ingredients: RecommendedIngredient[];
+  insight: string;
 }
 
 export type ListRecipesParams = {

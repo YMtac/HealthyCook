@@ -9,15 +9,11 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: ingredients
-    description: User ingredient management
   - name: recipes
-    description: Recipe operations
   - name: shopping
-    description: Shopping list management
   - name: favorites
-    description: Saved/favorited recipes
+  - name: recommendations
 
 paths:
   /healthz:
@@ -33,7 +29,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  # ─── Ingredients ───
   /ingredients:
     get:
       operationId: listIngredients
@@ -81,7 +76,6 @@ paths:
         "204":
           description: Deleted
 
-  # ─── Recipes ───
   /recipes/generate:
     post:
       operationId: generateRecipe
@@ -173,7 +167,6 @@ paths:
         "404":
           description: Not found
 
-  # ─── Shopping list ───
   /shopping:
     get:
       operationId: listShoppingItems
@@ -244,7 +237,6 @@ paths:
         "204":
           description: Deleted
 
-  # ─── Favorites ───
   /favorites:
     get:
       operationId: listFavorites
@@ -310,6 +302,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FavoriteStatus"
+
+  /recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [recommendations]
+      summary: Get ingredient recommendations based on favorites and cooking history
+      responses:
+        "200":
+          description: Recommended ingredients with reasoning
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendations"
 
 components:
   schemas:
@@ -385,6 +390,8 @@ components:
           type: string
         emoji:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         timeMinutes:
           type: integer
         difficulty:
@@ -418,6 +425,8 @@ components:
           type: string
         emoji:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         timeMinutes:
           type: integer
         difficulty:
@@ -500,3 +509,29 @@ components:
           type: integer
         isFavorited:
           type: boolean
+
+    RecommendedIngredient:
+      type: object
+      required: [name, emoji, reason, category]
+      properties:
+        name:
+          type: string
+        emoji:
+          type: string
+        reason:
+          type: string
+        category:
+          type: string
+        nutrient:
+          type: ["string", "null"]
+
+    Recommendations:
+      type: object
+      required: [ingredients, insight]
+      properties:
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendedIngredient"
+        insight:
+          type: string

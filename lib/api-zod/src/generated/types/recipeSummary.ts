@@ -10,6 +10,8 @@ export interface RecipeSummary {
   id: number;
   name: string;
   emoji: string;
+  /** @nullable */
+  imageUrl?: string | null;
   timeMinutes: number;
   difficulty: string;
   category: string;

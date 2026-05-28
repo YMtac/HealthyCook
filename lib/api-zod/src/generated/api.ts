@@ -58,6 +58,7 @@ export const GenerateRecipeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "timeMinutes": zod.number(),
   "difficulty": zod.string(),
   "category": zod.string(),
@@ -97,6 +98,7 @@ export const ListRecipesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "timeMinutes": zod.number(),
   "difficulty": zod.string(),
   "category": zod.string(),
@@ -113,6 +115,7 @@ export const GetTrendingRecipesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "timeMinutes": zod.number(),
   "difficulty": zod.string(),
   "category": zod.string(),
@@ -133,6 +136,7 @@ export const GetRecipeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "timeMinutes": zod.number(),
   "difficulty": zod.string(),
   "category": zod.string(),
@@ -226,6 +230,7 @@ export const ListFavoritesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "timeMinutes": zod.number(),
   "difficulty": zod.string(),
   "category": zod.string(),
@@ -261,6 +266,21 @@ export const GetFavoriteStatusParams = zod.object({
 export const GetFavoriteStatusResponse = zod.object({
   "recipeId": zod.number(),
   "isFavorited": zod.boolean()
+})
+
+
+/**
+ * @summary Get ingredient recommendations based on favorites and cooking history
+ */
+export const GetRecommendationsResponse = zod.object({
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "emoji": zod.string(),
+  "reason": zod.string(),
+  "category": zod.string(),
+  "nutrient": zod.string().nullish()
+})),
+  "insight": zod.string()
 })
 
 

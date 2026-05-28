@@ -6,6 +6,7 @@ export const recipesTable = pgTable("recipes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   emoji: text("emoji").notNull().default("🍽️"),
+  imageUrl: text("image_url"),
   timeMinutes: integer("time_minutes").notNull().default(30),
   difficulty: text("difficulty").notNull().default("Easy"),
   category: text("category").notNull().default("General"),

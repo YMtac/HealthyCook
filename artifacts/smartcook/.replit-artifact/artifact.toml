@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "SmartCook"
+version = "1.0.0"
+id = "artifacts/smartcook"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18860
+
+[services.development]
+run = "pnpm --filter @workspace/smartcook run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/smartcook", "run", "build" ]
+publicDir = "artifacts/smartcook/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18860"
+BASE_PATH = "/"

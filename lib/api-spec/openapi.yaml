@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SmartCook API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: ingredients
+    description: User ingredient management
+  - name: recipes
+    description: Recipe operations
+  - name: shopping
+    description: Shopping list management
+  - name: favorites
+    description: Saved/favorited recipes
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +32,471 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Ingredients ───
+  /ingredients:
+    get:
+      operationId: listIngredients
+      tags: [ingredients]
+      summary: List user ingredients
+      responses:
+        "200":
+          description: List of ingredients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ingredient"
+    post:
+      operationId: createIngredient
+      tags: [ingredients]
+      summary: Add an ingredient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngredientInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ingredient"
+
+  /ingredients/{id}:
+    delete:
+      operationId: deleteIngredient
+      tags: [ingredients]
+      summary: Remove an ingredient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Recipes ───
+  /recipes/generate:
+    post:
+      operationId: generateRecipe
+      tags: [recipes]
+      summary: Generate a recipe from current ingredients and preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRecipeInput"
+      responses:
+        "200":
+          description: Generated recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+
+  /recipes:
+    get:
+      operationId: listRecipes
+      tags: [recipes]
+      summary: Browse/explore recipes with optional filters
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: maxTime
+          in: query
+          schema:
+            type: integer
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+        - name: diet
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecipeSummary"
+
+  /recipes/trending:
+    get:
+      operationId: getTrendingRecipes
+      tags: [recipes]
+      summary: Get trending / featured recipes
+      responses:
+        "200":
+          description: Trending recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecipeSummary"
+
+  /recipes/{id}:
+    get:
+      operationId: getRecipe
+      tags: [recipes]
+      summary: Get full recipe details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recipe details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+        "404":
+          description: Not found
+
+  # ─── Shopping list ───
+  /shopping:
+    get:
+      operationId: listShoppingItems
+      tags: [shopping]
+      summary: Get all shopping list items
+      responses:
+        "200":
+          description: Shopping list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShoppingItem"
+    post:
+      operationId: createShoppingItem
+      tags: [shopping]
+      summary: Add an item to shopping list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShoppingItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShoppingItem"
+
+  /shopping/{id}:
+    patch:
+      operationId: updateShoppingItem
+      tags: [shopping]
+      summary: Toggle checked state or update item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShoppingItemUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShoppingItem"
+    delete:
+      operationId: deleteShoppingItem
+      tags: [shopping]
+      summary: Remove an item from shopping list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Favorites ───
+  /favorites:
+    get:
+      operationId: listFavorites
+      tags: [favorites]
+      summary: List favorited recipes
+      responses:
+        "200":
+          description: Favorites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecipeSummary"
+
+  /favorites/{recipeId}:
+    put:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Save a recipe to favorites
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteStatus"
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove a recipe from favorites
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /favorites/{recipeId}/status:
+    get:
+      operationId: getFavoriteStatus
+      tags: [favorites]
+      summary: Check if a recipe is favorited
+      parameters:
+        - name: recipeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteStatus"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    Ingredient:
+      type: object
+      required: [id, name, emoji]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+
+    IngredientInput:
+      type: object
+      required: [name, emoji]
+      properties:
+        name:
+          type: string
+        emoji:
+          type: string
+
+    Nutrition:
+      type: object
+      required: [kcal, protein, carbs, fat]
+      properties:
+        kcal:
+          type: integer
+        protein:
+          type: string
+        carbs:
+          type: string
+        fat:
+          type: string
+
+    RecipeStep:
+      type: object
+      required: [number, title, description]
+      properties:
+        number:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+
+    RecipeIngredient:
+      type: object
+      required: [name, emoji, quantity]
+      properties:
+        name:
+          type: string
+        emoji:
+          type: string
+        quantity:
+          type: string
+
+    Recipe:
+      type: object
+      required: [id, name, emoji, timeMinutes, difficulty, category, nutrition, ingredients, steps]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        timeMinutes:
+          type: integer
+        difficulty:
+          type: string
+        category:
+          type: string
+        diet:
+          type: ["string", "null"]
+        nutrition:
+          $ref: "#/components/schemas/Nutrition"
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeStep"
+        missingIngredients:
+          type: array
+          items:
+            type: string
+
+    RecipeSummary:
+      type: object
+      required: [id, name, emoji, timeMinutes, difficulty, category, kcal]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        timeMinutes:
+          type: integer
+        difficulty:
+          type: string
+        category:
+          type: string
+        kcal:
+          type: integer
+        isFavorited:
+          type: boolean
+
+    GenerateRecipeInput:
+      type: object
+      required: [ingredientIds, timePreference, difficulty, diet]
+      properties:
+        ingredientIds:
+          type: array
+          items:
+            type: integer
+        timePreference:
+          type: string
+        difficulty:
+          type: string
+        diet:
+          type: string
+
+    ShoppingItem:
+      type: object
+      required: [id, name, quantity, category, checked]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: ["string", "null"]
+        quantity:
+          type: string
+        category:
+          type: string
+        checked:
+          type: boolean
+        recipeId:
+          type: ["integer", "null"]
+        recipeName:
+          type: ["string", "null"]
+
+    ShoppingItemInput:
+      type: object
+      required: [name, quantity, category]
+      properties:
+        name:
+          type: string
+        emoji:
+          type: ["string", "null"]
+        quantity:
+          type: string
+        category:
+          type: string
+        recipeId:
+          type: ["integer", "null"]
+
+    ShoppingItemUpdate:
+      type: object
+      properties:
+        checked:
+          type: boolean
+        name:
+          type: string
+        quantity:
+          type: string
+        category:
+          type: string
+
+    FavoriteStatus:
+      type: object
+      required: [recipeId, isFavorited]
+      properties:
+        recipeId:
+          type: integer
+        isFavorited:
+          type: boolean

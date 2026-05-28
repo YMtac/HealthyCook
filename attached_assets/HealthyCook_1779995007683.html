@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SmartCook</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --g900: #14532d;
+  --g800: #166534;
+  --g700: #15803d;
+  --g600: #16a34a;
+  --g500: #22c55e;
+  --g200: #bbf7d0;
+  --g100: #dcfce7;
+  --g50:  #f0fdf4;
+  --orange: #ea580c;
+  --orange-h: #c2410c;
+  --white: #ffffff;
+  --gray50: #f8fafc;
+  --gray100: #f1f5f9;
+  --gray200: #e2e8f0;
+  --gray300: #cbd5e1;
+  --gray400: #94a3b8;
+  --gray500: #64748b;
+  --gray600: #475569;
+  --gray800: #1e293b;
+  --text: #1e293b;
+  --sub: #64748b;
+  --font: 'DM Sans', -apple-system, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: var(--g50);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── APP SHELL ── */
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0,0,0,0.12);
+}
+
+/* ── SCREENS ── */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  pointer-events: none;
+}
+.screen.active {
+  transform: translateX(0);
+  pointer-events: all;
+}
+.screen.prev {
+  transform: translateX(-30%);
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--g900);
+  padding: env(safe-area-inset-top, 12px) 20px 0;
+  padding-top: max(env(safe-area-inset-top), 12px);
+  padding-bottom: 0;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 60px;
+}
+.topbar-inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 14px;
+  position: relative;
+}
+.topbar-title {
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  text-align: center;
+}
+.topbar-subtitle {
+  color: #86efac;
+  font-size: 11px;
+  text-align: center;
+  margin-top: 1px;
+  padding-bottom: 12px;
+}
+.topbar-back {
+  position: absolute;
+  left: 0;
+  color: #86efac;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0;
+}
+.topbar-action {
+  position: absolute;
+  right: 0;
+  color: #86efac;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+/* ── SCROLL AREA ── */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 20px 12px;
+  background: var(--gray50);
+}
+.scroll-area.white { background: white; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  background: white;
+  border-top: 1px solid var(--gray100);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray400);
+  cursor: pointer;
+  position: relative;
+  gap: 3px;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  transition: color 0.15s;
+}
+.nav-item.active { color: var(--g700); font-weight: 600; }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 36px; height: 3px;
+  background: var(--g700);
+  border-radius: 0 0 4px 4px;
+}
+.nav-icon { font-size: 22px; line-height: 1; }
+
+/* ── COMPONENTS ── */
+.section-label {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  display: block; margin-bottom: 10px;
+}
+.section-label-green {
+  font-size: 11px; font-weight: 600; color: var(--g700);
+  display: block; margin-bottom: 8px;
+}
+
+.input-wrap {
+  background: white;
+  border: 1.5px solid var(--gray200);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  height: 46px;
+  gap: 8px;
+  margin-bottom: 12px;
+  cursor: text;
+  transition: border-color 0.15s;
+}
+.input-wrap:focus-within { border-color: var(--g700); }
+.input-wrap.active { border-color: var(--g700); }
+.input-wrap input, .input-wrap span {
+  border: none; background: none; outline: none;
+  font-family: var(--font); font-size: 14px; color: var(--text);
+  flex: 1; width: 100%;
+}
+.input-wrap input::placeholder { color: var(--gray400); }
+.input-icon { font-size: 16px; flex-shrink: 0; }
+
+.ingredient-chip {
+  display: flex; align-items: center;
+  background: var(--g100); border: 1px solid var(--g200);
+  border-radius: 14px; padding: 10px 14px;
+  margin-bottom: 8px; gap: 10px;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from { opacity:0; transform: translateY(-6px); } }
+.chip-emoji { font-size: 20px; line-height: 1; }
+.chip-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+.chip-rm {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--gray500); cursor: pointer;
+  transition: background 0.12s;
+}
+.chip-rm:hover { background: rgba(0,0,0,0.12); }
+
+.btn {
+  width: 100%; height: 52px; border-radius: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; color: white;
+  cursor: pointer; border: none; font-family: var(--font);
+  transition: transform 0.1s, opacity 0.1s;
+  letter-spacing: -0.1px;
+}
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn-orange { background: var(--orange); }
+.btn-green  { background: var(--g700); }
+.btn-ghost  {
+  background: white; border: 1.5px solid var(--gray200);
+  color: var(--gray600); font-weight: 500;
+}
+
+.pill-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.pill {
+  height: 36px; padding: 0 18px; border-radius: 18px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center;
+  border: 1.5px solid var(--gray200); background: white; color: var(--gray600);
+  cursor: pointer; font-family: var(--font);
+  transition: all 0.15s;
+}
+.pill.active { background: var(--g700); color: white; border-color: var(--g700); font-weight: 600; }
+.pill:active { transform: scale(0.96); }
+
+/* Card */
+.card {
+  background: white; border-radius: 16px;
+  border: 1px solid var(--gray100);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.card-body { padding: 16px; }
+
+/* Recipe header */
+.recipe-header {
+  background: var(--g50);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--g200);
+}
+.recipe-title-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.recipe-title { font-size: 18px; font-weight: 700; color: var(--text); flex: 1; }
+.recipe-heart { font-size: 22px; color: #fca5a5; cursor: pointer; transition: color 0.15s; }
+.recipe-heart.liked { color: #ef4444; }
+.recipe-meta { font-size: 13px; color: var(--sub); }
+
+/* Step rows */
+.step-row {
+  display: flex; align-items: flex-start;
+  padding: 13px 14px; border-radius: 12px;
+  margin-bottom: 6px; gap: 10px;
+  background: white; border: 1px solid var(--gray100);
+  transition: all 0.15s;
+}
+.step-row.active { background: var(--g100); border-color: var(--g200); }
+.step-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+.step-row.active .step-text { font-weight: 600; color: var(--g800); }
+
+/* Nutrition strip */
+.nutrition-strip {
+  display: flex; border: 1px solid var(--gray200);
+  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+  background: white;
+}
+.nut-cell {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 12px 4px;
+  border-right: 1px solid var(--gray200);
+}
+.nut-cell:last-child { border-right: none; }
+.nut-val { font-size: 20px; font-weight: 700; color: var(--g700); }
+.nut-unit { font-size: 11px; color: var(--gray400); margin-top: 2px; }
+
+/* Ingredient rows */
+.ingr-row {
+  display: flex; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--gray100); gap: 10px;
+}
+.ingr-row:last-of-type { border-bottom: none; }
+.ingr-emoji { font-size: 18px; }
+.ingr-name { font-size: 14px; color: var(--text); flex: 1; }
+.ingr-qty { font-size: 13px; color: var(--gray400); font-weight: 500; }
+
+/* Step numbers */
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+  background: var(--gray200); color: var(--gray600);
+  transition: all 0.15s;
+}
+.step-num.active { background: var(--g700); color: white; }
+
+/* Shopping */
+.source-tag {
+  background: var(--g200); border-radius: 20px;
+  padding: 8px 16px; font-size: 12px; font-weight: 600;
+  color: var(--g900); margin-bottom: 16px; text-align: center;
+  display: block;
+}
+.shop-item {
+  display: flex; align-items: center;
+  background: white; border: 1px solid var(--gray100);
+  border-radius: 14px; padding: 14px;
+  margin-bottom: 8px; gap: 12px;
+  cursor: pointer; transition: background 0.12s;
+}
+.shop-item:active { background: var(--gray50); }
+.shop-item.have { background: var(--gray50); border-color: var(--gray100); }
+.checkbox {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--gray300);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 13px; font-weight: 700;
+  transition: all 0.15s;
+}
+.checkbox.checked { background: var(--g700); border-color: var(--g700); color: white; }
+.shop-detail { flex: 1; }
+.shop-name { font-size: 14px; font-weight: 500; line-height: 1.2; }
+.shop-name.strike { text-decoration: line-through; color: var(--gray400); }
+.shop-sub { font-size: 12px; color: var(--gray400); margin-top: 2px; }
+.shop-chevron { color: var(--gray300); font-size: 18px; }
+
+/* Field label */
+.field-label {
+  font-size: 13px; font-weight: 600; color: var(--sub);
+  margin-bottom: 8px; display: block;
+}
+
+/* Category pills for add item */
+.cat-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.cat-pill {
+  padding: 8px 14px; border-radius: 10px; font-size: 13px;
+  border: 1.5px solid var(--gray200); background: white; color: var(--gray600);
+  cursor: pointer; font-family: var(--font); transition: all 0.12s;
+}
+.cat-pill.active {
+  background: var(--g100); border-color: var(--g700);
+  color: var(--g800); font-weight: 600;
+}
+.quick-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.quick-chip {
+  padding: 8px 14px; border-radius: 10px; font-size: 13px;
+  border: 1.5px solid var(--gray200); background: white; color: var(--gray600);
+  cursor: pointer; font-family: var(--font); transition: all 0.12s;
+}
+.quick-chip:active { background: var(--gray100); }
+
+/* Explore */
+.search-bar {
+  background: var(--gray100); border: 1.5px solid var(--gray200);
+  border-radius: 14px; display: flex; align-items: center;
+  padding: 0 14px; height: 46px; gap: 8px; margin-bottom: 14px;
+}
+.search-bar input {
+  border: none; background: none; outline: none;
+  font-family: var(--font); font-size: 14px; color: var(--text); flex: 1;
+}
+.search-bar input::placeholder { color: var(--gray400); }
+
+.recipe-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-top: 10px;
+}
+.rec-card {
+  background: white; border: 1px solid var(--gray100);
+  border-radius: 16px; overflow: hidden; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.rec-card:active { transform: scale(0.97); }
+.rec-img {
+  height: 80px; display: flex; align-items: center;
+  justify-content: center; font-size: 36px;
+}
+.rec-body { padding: 10px 12px 14px; }
+.rec-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.rec-meta { font-size: 11px; color: var(--sub); margin-top: 3px; }
+.rec-kcal { font-size: 12px; font-weight: 700; color: var(--g700); margin-top: 4px; }
+
+/* Filter */
+.sort-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-radius: 12px; margin-bottom: 6px;
+  border: 1px solid var(--gray100); background: white; cursor: pointer;
+  transition: background 0.12s;
+}
+.sort-row.active { background: var(--g100); border-color: var(--g200); }
+.radio-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--gray300); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.12s;
+}
+.radio-dot.active { border-color: var(--g700); }
+.radio-dot.active::after {
+  content: ''; width: 8px; height: 8px;
+  background: var(--g700); border-radius: 50%;
+}
+.radio-label { font-size: 14px; flex: 1; color: var(--text); }
+.sort-row.active .radio-label { font-weight: 600; color: var(--g800); }
+
+.slider-container { margin: 8px 0 4px; }
+.slider-track {
+  height: 4px; background: var(--gray200); border-radius: 2px;
+  position: relative; margin: 12px 0 6px;
+}
+.slider-fill {
+  height: 100%; background: var(--g600); border-radius: 2px;
+  position: relative; transition: width 0.05s;
+}
+.slider-thumb {
+  width: 20px; height: 20px; background: var(--g700); border-radius: 50%;
+  position: absolute; right: -10px; top: -8px;
+  box-shadow: 0 2px 6px rgba(21,128,61,0.4);
+}
+input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px; background: transparent;
+  outline: none; cursor: pointer; margin: 12px 0 6px;
+  position: relative; z-index: 2;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--g700);
+  box-shadow: 0 2px 6px rgba(21,128,61,0.4);
+  cursor: pointer;
+}
+.time-label { font-size: 14px; font-weight: 600; color: var(--g700); }
+
+.cuisine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.cuisine-chip {
+  padding: 12px; text-align: center; border-radius: 12px;
+  font-size: 13px; border: 1.5px solid var(--gray200); background: white; color: var(--gray600);
+  cursor: pointer; transition: all 0.12s; font-family: var(--font);
+}
+.cuisine-chip.active {
+  background: var(--g100); border-color: var(--g700);
+  color: var(--g800); font-weight: 600;
+}
+
+/* Spacer */
+.spacer { flex: 1; min-height: 16px; }
+
+/* Divider */
+.divider { height: 1px; background: var(--gray100); margin: 16px 0; }
+
+/* Bottom action bar */
+.bottom-action {
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: white;
+  border-top: 1px solid var(--gray100);
+  flex-shrink: 0;
+}
+
+/* Sticky section label */
+.sticky-label {
+  background: var(--gray50);
+  padding: 8px 0 4px;
+  margin-bottom: 6px;
+}
+
+/* Tag */
+.tag {
+  display: inline-flex; align-items: center;
+  background: var(--g200); color: var(--g900);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 12px; font-weight: 600;
+}
+
+/* Empty area below btn */
+.safe-bottom { height: env(safe-area-inset-bottom, 0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Ingredient Input (home) -->
+<!-- ════════════════════════════════ -->
+<div class="screen active" id="s-home">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <div class="topbar-title">SmartCook</div>
+      </div>
+    </div>
+    <div class="topbar-subtitle">What's in your fridge?</div>
+  </div>
+
+  <div class="scroll-area white" style="padding-bottom:0">
+    <span class="section-label">My Ingredients</span>
+    <div class="input-wrap" id="ingredient-input-wrap">
+      <span class="input-icon">🔍</span>
+      <input id="ingredient-input" placeholder="Type an ingredient..." autocomplete="off"
+        onkeydown="if(event.key==='Enter')addIngredient()">
+    </div>
+
+    <div id="chip-list"></div>
+
+    <!-- Suggestions -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <span onclick="quickAdd('🍅','Tomato')" style="cursor:pointer;padding:6px 12px;border-radius:20px;background:var(--gray100);font-size:13px;color:var(--sub)">+ 🍅 Tomato</span>
+      <span onclick="quickAdd('🥚','Eggs')" style="cursor:pointer;padding:6px 12px;border-radius:20px;background:var(--gray100);font-size:13px;color:var(--sub)">+ 🥚 Eggs</span>
+      <span onclick="quickAdd('🍚','Rice')" style="cursor:pointer;padding:6px 12px;border-radius:20px;background:var(--gray100);font-size:13px;color:var(--sub)">+ 🍚 Rice</span>
+      <span onclick="quickAdd('🧄','Garlic')" style="cursor:pointer;padding:6px 12px;border-radius:20px;background:var(--gray100);font-size:13px;color:var(--sub)">+ 🧄 Garlic</span>
+      <span onclick="quickAdd('🧈','Butter')" style="cursor:pointer;padding:6px 12px;border-radius:20px;background:var(--gray100);font-size:13px;color:var(--sub)">+ 🧈 Butter</span>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-orange" onclick="goTo('s-prefs')">Generate Recipe &nbsp;→</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Preferences             -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-prefs">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-back" onclick="goBack()">‹ Back</div>
+      <div class="topbar-title">Preferences</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <span class="section-label" style="font-size:16px;margin-bottom:20px">Set Your Preferences</span>
+
+    <span class="section-label-green">⏱ Time Available</span>
+    <div class="pill-group" id="pills-time">
+      <div class="pill active" onclick="selectPill(this,'pills-time')">&lt; 15 min</div>
+      <div class="pill" onclick="selectPill(this,'pills-time')">30 min</div>
+      <div class="pill" onclick="selectPill(this,'pills-time')">60 min+</div>
+    </div>
+
+    <span class="section-label-green">🏃 Difficulty</span>
+    <div class="pill-group" id="pills-diff">
+      <div class="pill active" onclick="selectPill(this,'pills-diff')">Easy</div>
+      <div class="pill" onclick="selectPill(this,'pills-diff')">Medium</div>
+      <div class="pill" onclick="selectPill(this,'pills-diff')">Hard</div>
+    </div>
+
+    <span class="section-label-green">🥗 Diet</span>
+    <div class="pill-group" id="pills-diet">
+      <div class="pill active" onclick="selectPill(this,'pills-diet')">Any</div>
+      <div class="pill" onclick="selectPill(this,'pills-diet')">Vegan</div>
+      <div class="pill" onclick="selectPill(this,'pills-diet')">Vegetarian</div>
+      <div class="pill" onclick="selectPill(this,'pills-diet')">High Protein</div>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-orange" onclick="goTo('s-recipe-output')">Cook It! &nbsp;→</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Recipe Output           -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-recipe-output">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-back" onclick="goBack()">‹ Back</div>
+      <div class="topbar-title">Recipe</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <div class="recipe-header">
+      <div class="recipe-title-row">
+        <span style="font-size:24px">🔍</span>
+        <span class="recipe-title">Tomato Egg Rice</span>
+      </div>
+      <div class="recipe-meta">Ready in 10 min &nbsp;·&nbsp; Easy</div>
+    </div>
+
+    <span class="section-label">Steps</span>
+    <div class="step-row active"><span class="step-text">1.&nbsp; Scramble eggs with a pinch of salt until just set</span></div>
+    <div class="step-row"><span class="step-text">2.&nbsp; Sauté diced tomatoes until they break down</span></div>
+    <div class="step-row"><span class="step-text">3.&nbsp; Add leftover rice and mix well</span></div>
+    <div class="step-row"><span class="step-text">4.&nbsp; Season with soy sauce and sesame oil</span></div>
+    <div class="step-row"><span class="step-text">5.&nbsp; Serve hot, topped with spring onion</span></div>
+
+    <div style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="goTo('s-recipe-output')">⟳ &nbsp;Regenerate Recipe</button>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-green" onclick="goTo('s-recipe-detail')">View Full Recipe &nbsp;→</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Recipe Detail           -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-recipe-detail">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-back" onclick="goBack()">‹ Back</div>
+      <div class="topbar-title">Recipe Detail</div>
+      <div class="topbar-action" id="heart-btn" onclick="toggleHeart()">♡</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <div class="recipe-header">
+      <div class="recipe-title-row">
+        <span style="font-size:22px">🔍</span>
+        <span class="recipe-title">Tomato Egg Rice</span>
+      </div>
+      <div class="recipe-meta" style="margin-top:6px">⏱ 10 min &nbsp;·&nbsp; ⭐ Easy &nbsp;·&nbsp; 🌾 Asian</div>
+    </div>
+
+    <div class="nutrition-strip">
+      <div class="nut-cell"><div class="nut-val">~350</div><div class="nut-unit">kcal</div></div>
+      <div class="nut-cell"><div class="nut-val">18g</div><div class="nut-unit">Protein</div></div>
+      <div class="nut-cell"><div class="nut-val">42g</div><div class="nut-unit">Carbs</div></div>
+      <div class="nut-cell"><div class="nut-val">9g</div><div class="nut-unit">Fat</div></div>
+    </div>
+
+    <span class="section-label">Ingredients</span>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body" style="padding:8px 16px">
+        <div class="ingr-row"><span class="ingr-emoji">🍅</span><span class="ingr-name">Tomato</span><span class="ingr-qty">×1 large</span></div>
+        <div class="ingr-row"><span class="ingr-emoji">🥚</span><span class="ingr-name">Eggs</span><span class="ingr-qty">×2</span></div>
+        <div class="ingr-row"><span class="ingr-emoji">🍚</span><span class="ingr-name">Leftover rice</span><span class="ingr-qty">1 cup</span></div>
+        <div class="ingr-row"><span class="ingr-emoji">🧂</span><span class="ingr-name">Soy sauce</span><span class="ingr-qty">1 tbsp</span></div>
+        <div class="ingr-row"><span class="ingr-emoji">🛢️</span><span class="ingr-name">Sesame oil</span><span class="ingr-qty">1 tsp</span></div>
+        <div class="ingr-row"><span class="ingr-emoji">🧅</span><span class="ingr-name">Spring onion</span><span class="ingr-qty">for topping</span></div>
+      </div>
+    </div>
+
+    <span class="section-label">Steps</span>
+    <div id="steps-list">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px" onclick="setActiveStep(0)">
+        <div class="step-num active" id="step-0">1</div>
+        <div style="flex:1;padding-top:2px">
+          <div style="font-size:14px;font-weight:600;color:var(--g800)">Scramble eggs</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5">Beat eggs with a pinch of salt. Cook on medium heat until just set, breaking into pieces.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px" onclick="setActiveStep(1)">
+        <div class="step-num" id="step-1">2</div>
+        <div style="flex:1;padding-top:2px">
+          <div style="font-size:14px;color:var(--text)">Sauté tomatoes</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5">Add diced tomatoes to the same pan. Cook until they soften and release juice.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px" onclick="setActiveStep(2)">
+        <div class="step-num" id="step-2">3</div>
+        <div style="flex:1;padding-top:2px">
+          <div style="font-size:14px;color:var(--text)">Add rice</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5">Mix in leftover rice and stir-fry until combined and heated through.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px" onclick="setActiveStep(3)">
+        <div class="step-num" id="step-3">4</div>
+        <div style="flex:1;padding-top:2px">
+          <div style="font-size:14px;color:var(--text)">Season</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5">Add soy sauce and sesame oil. Toss everything together.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px" onclick="setActiveStep(4)">
+        <div class="step-num" id="step-4">5</div>
+        <div style="flex:1;padding-top:2px">
+          <div style="font-size:14px;color:var(--text)">Serve</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:3px;line-height:1.5">Plate and top with chopped spring onion. Serve immediately.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-green" id="save-btn" onclick="toggleSave()">♡ &nbsp;Save to Favourites</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Shopping List           -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-shopping">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-title">Shopping List</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <span class="source-tag">Based on: Tomato Egg Rice &nbsp;|&nbsp; 3 items</span>
+
+    <span class="section-label">Missing Ingredients</span>
+    <div class="shop-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <div class="shop-detail">
+        <div class="shop-name">🧂 Salt</div>
+        <div class="shop-sub">1 tsp</div>
+      </div>
+      <span class="shop-chevron">›</span>
+    </div>
+    <div class="shop-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <div class="shop-detail">
+        <div class="shop-name">🧅 Spring Onion</div>
+        <div class="shop-sub">2 stalks</div>
+      </div>
+      <span class="shop-chevron">›</span>
+    </div>
+    <div class="shop-item" onclick="toggleCheck(this)">
+      <div class="checkbox"></div>
+      <div class="shop-detail">
+        <div class="shop-name">🛢️ Sesame Oil</div>
+        <div class="shop-sub">small bottle</div>
+      </div>
+      <span class="shop-chevron">›</span>
+    </div>
+
+    <div class="divider"></div>
+    <span class="section-label">Already Have</span>
+    <div class="shop-item have">
+      <div class="checkbox checked">✓</div>
+      <div class="shop-detail"><div class="shop-name strike">🍅 Tomato</div></div>
+    </div>
+    <div class="shop-item have">
+      <div class="checkbox checked">✓</div>
+      <div class="shop-detail"><div class="shop-name strike">🥚 Eggs</div></div>
+    </div>
+    <div class="shop-item have">
+      <div class="checkbox checked">✓</div>
+      <div class="shop-detail"><div class="shop-name strike">🍚 Rice</div></div>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-orange" onclick="goTo('s-add-item')">+ &nbsp;Add Item Manually</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item active" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Add Item                -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-add-item">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-back" onclick="goBack()">‹ Back</div>
+      <div class="topbar-title">Add Item</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <span class="section-label" style="font-size:16px;margin-bottom:20px">Add to Shopping List</span>
+
+    <span class="field-label">Item Name</span>
+    <div class="input-wrap active" style="margin-bottom:16px">
+      <input placeholder="e.g. Soy Sauce" autocomplete="off">
+    </div>
+
+    <span class="field-label">Quantity</span>
+    <div class="input-wrap" style="margin-bottom:16px">
+      <input placeholder="e.g. 2 tbsp" autocomplete="off">
+    </div>
+
+    <span class="field-label">Category</span>
+    <div class="cat-row" id="cat-pills">
+      <div class="cat-pill" onclick="selectCat(this)">🥦 Produce</div>
+      <div class="cat-pill active" onclick="selectCat(this)">🫙 Pantry</div>
+      <div class="cat-pill" onclick="selectCat(this)">❄️ Frozen</div>
+    </div>
+
+    <span class="field-label">Quick Add</span>
+    <div class="quick-row">
+      <div class="quick-chip">🧂 Salt</div>
+      <div class="quick-chip">🧅 Onion</div>
+      <div class="quick-chip">🫒 Oil</div>
+      <div class="quick-chip">🧄 Garlic</div>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-green" onclick="goBack()">✓ &nbsp;Add to List</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item active" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Explore                 -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-explore">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-title">Explore</div>
+      <div class="topbar-action" onclick="goTo('s-filter')">⚙️</div>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <div class="search-bar">
+      <span style="font-size:16px">🔍</span>
+      <input placeholder="Search recipes..." autocomplete="off">
+    </div>
+
+    <div class="pill-group" id="pills-explore" style="margin-bottom:4px">
+      <div class="pill active" style="height:32px;font-size:12px" onclick="selectPill(this,'pills-explore')">All</div>
+      <div class="pill" style="height:32px;font-size:12px" onclick="selectPill(this,'pills-explore')">Asian</div>
+      <div class="pill" style="height:32px;font-size:12px" onclick="selectPill(this,'pills-explore')">Quick</div>
+      <div class="pill" style="height:32px;font-size:12px" onclick="selectPill(this,'pills-explore')">Vegan</div>
+      <div class="pill" style="height:32px;font-size:12px" onclick="selectPill(this,'pills-explore')">🔥 Trending</div>
+    </div>
+
+    <div class="recipe-grid">
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:var(--g100)">🥗</div>
+        <div class="rec-body"><div class="rec-name">Vegan Bowl</div><div class="rec-meta">⏱ 15 min · Easy</div><div class="rec-kcal">280 kcal</div></div>
+      </div>
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:#fef9c3">🍜</div>
+        <div class="rec-body"><div class="rec-name">Ramen</div><div class="rec-meta">⏱ 25 min · Med</div><div class="rec-kcal">410 kcal</div></div>
+      </div>
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:#fff7ed">🥞</div>
+        <div class="rec-body"><div class="rec-name">Pancakes</div><div class="rec-meta">⏱ 20 min · Easy</div><div class="rec-kcal">340 kcal</div></div>
+      </div>
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:#fef2f2">🍛</div>
+        <div class="rec-body"><div class="rec-name">Curry Rice</div><div class="rec-meta">⏱ 30 min · Med</div><div class="rec-kcal">520 kcal</div></div>
+      </div>
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:#f0f9ff">🍱</div>
+        <div class="rec-body"><div class="rec-name">Bento Box</div><div class="rec-meta">⏱ 20 min · Easy</div><div class="rec-kcal">390 kcal</div></div>
+      </div>
+      <div class="rec-card" onclick="goTo('s-recipe-detail')">
+        <div class="rec-img" style="background:#fdf4ff">🥙</div>
+        <div class="rec-body"><div class="rec-name">Wrap</div><div class="rec-meta">⏱ 10 min · Easy</div><div class="rec-kcal">310 kcal</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item active" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ -->
+<!-- SCREEN: Filter                  -->
+<!-- ════════════════════════════════ -->
+<div class="screen" id="s-filter">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-back" onclick="goBack()">‹ Back</div>
+      <div class="topbar-title">Filter Recipes</div>
+    </div>
+  </div>
+
+  <div class="scroll-area white">
+    <span class="section-label" style="font-size:16px;margin-bottom:20px">Filter &amp; Sort</span>
+
+    <span class="section-label-green">Sort by</span>
+    <div id="sort-group">
+      <div class="sort-row active" onclick="selectSort(this)">
+        <div class="radio-dot active"></div>
+        <span class="radio-label">Most Popular</span>
+      </div>
+      <div class="sort-row" onclick="selectSort(this)">
+        <div class="radio-dot"></div>
+        <span class="radio-label">Quickest</span>
+      </div>
+      <div class="sort-row" onclick="selectSort(this)">
+        <div class="radio-dot"></div>
+        <span class="radio-label">Lowest Calories</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <span class="section-label-green">Max Cooking Time</span>
+    <input type="range" min="5" max="60" value="30" step="5" id="time-slider" oninput="updateTime(this.value)">
+    <span class="time-label" id="time-val">30 min</span>
+
+    <div class="divider"></div>
+    <span class="section-label-green">Cuisine</span>
+    <div class="cuisine-grid" id="cuisine-grid">
+      <div class="cuisine-chip active" onclick="toggleCuisine(this)">🥢 Asian</div>
+      <div class="cuisine-chip" onclick="toggleCuisine(this)">🍝 Italian</div>
+      <div class="cuisine-chip" onclick="toggleCuisine(this)">🌮 Mexican</div>
+      <div class="cuisine-chip" onclick="toggleCuisine(this)">🥗 Mediterranean</div>
+      <div class="cuisine-chip" onclick="toggleCuisine(this)">🍔 American</div>
+      <div class="cuisine-chip active" onclick="toggleCuisine(this)">🌍 Any</div>
+    </div>
+  </div>
+
+  <div class="bottom-action">
+    <button class="btn btn-orange" onclick="goBack()">Apply Filters</button>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('s-home')"><span class="nav-icon">🍳</span>Cook</button>
+    <button class="nav-item" onclick="goTo('s-shopping')"><span class="nav-icon">🛒</span>Shop</button>
+    <button class="nav-item active" onclick="goTo('s-explore')"><span class="nav-icon">🔍</span>Explore</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ── Navigation ──
+const history = ['s-home'];
+
+function goTo(id) {
+  const current = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next || current === next) return;
+  current.classList.remove('active');
+  current.classList.add('prev');
+  next.classList.add('active');
+  history.push(id);
+  setTimeout(() => current.classList.remove('prev'), 300);
+}
+
+function goBack() {
+  if (history.length <= 1) return;
+  history.pop();
+  const prevId = history[history.length - 1];
+  const current = document.querySelector('.screen.active');
+  const prev = document.getElementById(prevId);
+  if (!prev) return;
+  current.classList.remove('active');
+  prev.classList.remove('prev');
+  prev.classList.add('active');
+}
+
+// ── Ingredients ──
+const ingredients = [
+  {emoji:'🍅', name:'Tomato'},
+  {emoji:'🥚', name:'Eggs (×2)'},
+  {emoji:'🍚', name:'Leftover Rice'}
+];
+
+function renderChips() {
+  const list = document.getElementById('chip-list');
+  list.innerHTML = ingredients.map((i, idx) => `
+    <div class="ingredient-chip">
+      <span class="chip-emoji">${i.emoji}</span>
+      <span class="chip-name">${i.name}</span>
+      <div class="chip-rm" onclick="removeIngredient(${idx})">✕</div>
+    </div>
+  `).join('');
+}
+
+function removeIngredient(idx) {
+  ingredients.splice(idx, 1);
+  renderChips();
+}
+
+function addIngredient() {
+  const input = document.getElementById('ingredient-input');
+  const val = input.value.trim();
+  if (!val) return;
+  ingredients.push({emoji:'🥄', name: val});
+  input.value = '';
+  renderChips();
+}
+
+function quickAdd(emoji, name) {
+  if (ingredients.some(i => i.name === name)) return;
+  ingredients.push({emoji, name});
+  renderChips();
+}
+
+renderChips();
+
+// ── Pills (single select) ──
+function selectPill(el, groupId) {
+  document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Shopping checkboxes ──
+function toggleCheck(row) {
+  const cb = row.querySelector('.checkbox');
+  const name = row.querySelector('.shop-name');
+  if (cb.classList.contains('checked')) {
+    cb.classList.remove('checked');
+    cb.textContent = '';
+    name.classList.remove('strike');
+    row.classList.remove('have');
+  } else {
+    cb.classList.add('checked');
+    cb.textContent = '✓';
+    name.classList.add('strike');
+    row.classList.add('have');
+  }
+}
+
+// ── Category pills ──
+function selectCat(el) {
+  document.querySelectorAll('#cat-pills .cat-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Sort ──
+function selectSort(row) {
+  document.querySelectorAll('#sort-group .sort-row').forEach(r => {
+    r.classList.remove('active');
+    r.querySelector('.radio-dot').classList.remove('active');
+    r.querySelector('.radio-label').classList.remove('active');
+  });
+  row.classList.add('active');
+  row.querySelector('.radio-dot').classList.add('active');
+}
+
+// ── Time slider ──
+function updateTime(val) {
+  document.getElementById('time-val').textContent = val + ' min';
+}
+
+// ── Cuisine ──
+function toggleCuisine(el) {
+  el.classList.toggle('active');
+}
+
+// ── Heart / Save ──
+function toggleHeart() {
+  const btn = document.getElementById('heart-btn');
+  const save = document.getElementById('save-btn');
+  const liked = btn.textContent === '♥';
+  btn.textContent = liked ? '♡' : '♥';
+  btn.style.color = liked ? '#86efac' : '#ef4444';
+  save.textContent = liked ? '♡  Save to Favourites' : '♥  Saved!';
+  save.style.background = liked ? 'var(--g700)' : 'var(--g600)';
+}
+function toggleSave() { toggleHeart(); }
+
+// ── Recipe step highlight ──
+let activeStep = 0;
+function setActiveStep(idx) {
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) {
+      el.classList.toggle('active', i === idx);
+      const parent = el.parentElement;
+      const title = parent.querySelector('div > div:first-child');
+      if (title) {
+        title.style.fontWeight = i === idx ? '600' : '400';
+        title.style.color = i === idx ? 'var(--g800)' : 'var(--text)';
+      }
+    }
+  }
+  activeStep = idx;
+}
+</script>
+</body>
+</html>

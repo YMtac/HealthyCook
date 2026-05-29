@@ -2149,10 +2149,9 @@ function MainLayout() {
         <div className="blob blob-2"/>
         <div className="blob blob-3"/>
       </div>
-
       <nav className="hidden md:flex flex-col w-64 bg-[#f5f0e6]/80 backdrop-blur border-r border-[#d4c4a8] z-30 shrink-0 h-[100dvh] p-6 justify-between">
         <div>
-          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">SmartCook</h1>
+          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">HealthyCook</h1>
           <ul className="space-y-4">
             <SideNavBtn tab="cook" icon={<ChefHat size={24} />} label="Cook" />
             <SideNavBtn tab="shop" icon={<ShoppingCart size={24} />} label="Shop" />
@@ -2164,7 +2163,6 @@ function MainLayout() {
           <UserAuthButton navigate={(p) => window.location.href = p} />
         </div>
       </nav>
-
       <div className="flex-1 relative h-[100dvh] overflow-hidden z-10">
         <ScreenWrapper isActive={screen.name === 'tabs' && screen.tab === 'cook'}>
           <CookTab navigate={navigate} />
@@ -2222,7 +2220,6 @@ function MainLayout() {
           <FavoritesScreen navigate={navigate} />
         </ScreenWrapper>
       </div>
-
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 pb-safe">
         <div className="bg-[#f5f0e6]/90 backdrop-blur border-t border-[#d4c4a8] px-6 py-4 flex justify-between items-center" style={{ borderRadius: '20px 20px 0 0' }}>
           <NavBtn tab="cook" icon={<ChefHat size={24} />} label="Cook" />

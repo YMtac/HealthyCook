@@ -14,6 +14,7 @@ tags:
   - name: shopping
   - name: favorites
   - name: recommendations
+  - name: cooking-logs
 
 paths:
   /healthz:
@@ -316,6 +317,82 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recommendations"
 
+  /cooking-logs:
+    get:
+      operationId: listCookingLogs
+      tags: [cooking-logs]
+      summary: List all cooking log entries
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            description: ISO date string start range
+        - name: to
+          in: query
+          schema:
+            type: string
+            description: ISO date string end range
+      responses:
+        "200":
+          description: Cooking logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CookingLog"
+    post:
+      operationId: createCookingLog
+      tags: [cooking-logs]
+      summary: Log a cooked meal (triggered by Done! button)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CookingLogInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookingLog"
+
+  /cooking-logs/streak:
+    get:
+      operationId: getCookingStreak
+      tags: [cooking-logs]
+      summary: Get the user's current cooking streak
+      responses:
+        "200":
+          description: Streak info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakInfo"
+
+  /cooking-logs/stats:
+    get:
+      operationId: getCookingStats
+      tags: [cooking-logs]
+      summary: Get aggregated nutrition stats for a period
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [week, month, year]
+      responses:
+        "200":
+          description: Nutrition stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionStats"
+
 components:
   schemas:
     HealthStatus:
@@ -440,7 +517,7 @@ components:
 
     GenerateRecipeInput:
       type: object
-      required: [ingredientIds, timePreference, difficulty, diet]
+      required: [ingredientIds, timePreference, difficulty]
       properties:
         ingredientIds:
           type: array
@@ -450,7 +527,9 @@ components:
           type: string
         difficulty:
           type: string
-        diet:
+        cookingMethod:
+          type: string
+        cuisineStyle:
           type: string
 
     ShoppingItem:
@@ -535,3 +614,74 @@ components:
             $ref: "#/components/schemas/RecommendedIngredient"
         insight:
           type: string
+
+    CookingLog:
+      type: object
+      required: [id, recipeId, recipeName, kcal, protein, carbs, fat, cookedAt]
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        recipeName:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        kcal:
+          type: integer
+        protein:
+          type: string
+        carbs:
+          type: string
+        fat:
+          type: string
+        cookedAt:
+          type: string
+          format: date-time
+
+    CookingLogInput:
+      type: object
+      required: [recipeId, recipeName, kcal, protein, carbs, fat]
+      properties:
+        recipeId:
+          type: integer
+        recipeName:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        kcal:
+          type: integer
+        protein:
+          type: string
+        carbs:
+          type: string
+        fat:
+          type: string
+
+    StreakInfo:
+      type: object
+      required: [currentStreak, longestStreak, totalCooked]
+      properties:
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        totalCooked:
+          type: integer
+
+    NutritionStats:
+      type: object
+      required: [period, totalKcal, avgProtein, avgCarbs, avgFat, meals]
+      properties:
+        period:
+          type: string
+        totalKcal:
+          type: integer
+        avgProtein:
+          type: string
+        avgCarbs:
+          type: string
+        avgFat:
+          type: string
+        meals:
+          type: integer

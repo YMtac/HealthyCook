@@ -5,6 +5,7 @@ import recipesRouter from "./recipes";
 import shoppingRouter from "./shopping";
 import favoritesRouter from "./favorites";
 import recommendationsRouter from "./recommendations";
+import cookingLogsRouter from "./cooking-logs";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(recipesRouter);
 router.use(shoppingRouter);
 router.use(favoritesRouter);
 router.use(recommendationsRouter);
+router.use(cookingLogsRouter);
 
 export default router;

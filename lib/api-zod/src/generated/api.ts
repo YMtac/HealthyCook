@@ -51,7 +51,8 @@ export const GenerateRecipeBody = zod.object({
   "ingredientIds": zod.array(zod.number()),
   "timePreference": zod.string(),
   "difficulty": zod.string(),
-  "diet": zod.string()
+  "cookingMethod": zod.string().optional(),
+  "cuisineStyle": zod.string().optional()
 })
 
 export const GenerateRecipeResponse = zod.object({
@@ -281,6 +282,69 @@ export const GetRecommendationsResponse = zod.object({
   "nutrient": zod.string().nullish()
 })),
   "insight": zod.string()
+})
+
+
+/**
+ * @summary List all cooking log entries
+ */
+export const ListCookingLogsQueryParams = zod.object({
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional()
+})
+
+export const ListCookingLogsResponseItem = zod.object({
+  "id": zod.number(),
+  "recipeId": zod.number(),
+  "recipeName": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "kcal": zod.number(),
+  "protein": zod.string(),
+  "carbs": zod.string(),
+  "fat": zod.string(),
+  "cookedAt": zod.coerce.date()
+})
+export const ListCookingLogsResponse = zod.array(ListCookingLogsResponseItem)
+
+
+/**
+ * @summary Log a cooked meal (triggered by Done! button)
+ */
+export const CreateCookingLogBody = zod.object({
+  "recipeId": zod.number(),
+  "recipeName": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "kcal": zod.number(),
+  "protein": zod.string(),
+  "carbs": zod.string(),
+  "fat": zod.string()
+})
+
+
+/**
+ * @summary Get the user's current cooking streak
+ */
+export const GetCookingStreakResponse = zod.object({
+  "currentStreak": zod.number(),
+  "longestStreak": zod.number(),
+  "totalCooked": zod.number()
+})
+
+
+/**
+ * @summary Get aggregated nutrition stats for a period
+ */
+export const GetCookingStatsQueryParams = zod.object({
+  "period": zod.enum(['week', 'month', 'year'])
+})
+
+export const GetCookingStatsResponse = zod.object({
+  "period": zod.string(),
+  "totalKcal": zod.number(),
+  "avgProtein": zod.string(),
+  "avgCarbs": zod.string(),
+  "avgFat": zod.string(),
+  "meals": zod.number()
 })
 
 

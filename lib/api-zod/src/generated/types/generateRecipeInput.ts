@@ -10,5 +10,6 @@ export interface GenerateRecipeInput {
   ingredientIds: number[];
   timePreference: string;
   difficulty: string;
-  diet: string;
+  cookingMethod?: string;
+  cuisineStyle?: string;
 }

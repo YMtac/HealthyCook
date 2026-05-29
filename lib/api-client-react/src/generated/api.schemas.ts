@@ -73,7 +73,8 @@ export interface GenerateRecipeInput {
   ingredientIds: number[];
   timePreference: string;
   difficulty: string;
-  diet: string;
+  cookingMethod?: string;
+  cuisineStyle?: string;
 }
 
 export interface ShoppingItem {
@@ -126,6 +127,45 @@ export interface Recommendations {
   insight: string;
 }
 
+export interface CookingLog {
+  id: number;
+  recipeId: number;
+  recipeName: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  kcal: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+  cookedAt: string;
+}
+
+export interface CookingLogInput {
+  recipeId: number;
+  recipeName: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  kcal: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+}
+
+export interface StreakInfo {
+  currentStreak: number;
+  longestStreak: number;
+  totalCooked: number;
+}
+
+export interface NutritionStats {
+  period: string;
+  totalKcal: number;
+  avgProtein: string;
+  avgCarbs: string;
+  avgFat: string;
+  meals: number;
+}
+
 export type ListRecipesParams = {
 search?: string;
 category?: string;
@@ -133,4 +173,28 @@ maxTime?: number;
 difficulty?: string;
 diet?: string;
 };
+
+export type ListCookingLogsParams = {
+/**
+ * ISO date string start range
+ */
+from?: string;
+/**
+ * ISO date string end range
+ */
+to?: string;
+};
+
+export type GetCookingStatsParams = {
+period: GetCookingStatsPeriod;
+};
+
+export type GetCookingStatsPeriod = typeof GetCookingStatsPeriod[keyof typeof GetCookingStatsPeriod];
+
+
+export const GetCookingStatsPeriod = {
+  week: 'week',
+  month: 'month',
+  year: 'year',
+} as const;
 

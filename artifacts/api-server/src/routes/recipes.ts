@@ -48,7 +48,7 @@ router.post("/recipes/generate", async (req, res) => {
     return;
   }
 
-  const { ingredientIds, difficulty, diet } = parsed.data;
+  const { ingredientIds, difficulty, cuisineStyle } = parsed.data;
 
   let userIngredients: string[] = [];
   if (ingredientIds && ingredientIds.length > 0) {
@@ -58,7 +58,7 @@ router.post("/recipes/generate", async (req, res) => {
 
   const conditions: any[] = [];
   if (difficulty && difficulty !== "Any") conditions.push(eq(recipesTable.difficulty, difficulty));
-  if (diet && diet !== "Any") conditions.push(eq(recipesTable.diet, diet));
+  if (cuisineStyle && cuisineStyle !== "Any") conditions.push(eq(recipesTable.category, cuisineStyle));
 
   const recipes = conditions.length > 0
     ? await db.select().from(recipesTable).where(and(...conditions))

@@ -20,18 +20,24 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CookingLog,
+  CookingLogInput,
   FavoriteStatus,
   GenerateRecipeInput,
+  GetCookingStatsParams,
   HealthStatus,
   Ingredient,
   IngredientInput,
+  ListCookingLogsParams,
   ListRecipesParams,
+  NutritionStats,
   Recipe,
   RecipeSummary,
   Recommendations,
   ShoppingItem,
   ShoppingItemInput,
-  ShoppingItemUpdate
+  ShoppingItemUpdate,
+  StreakInfo
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1299,6 +1305,322 @@ export function useGetRecommendations<TData = Awaited<ReturnType<typeof getRecom
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetRecommendationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListCookingLogsUrl = (params?: ListCookingLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/cooking-logs?${stringifiedParams}` : `/api/cooking-logs`
+}
+
+/**
+ * @summary List all cooking log entries
+ */
+export const listCookingLogs = async (params?: ListCookingLogsParams, options?: RequestInit): Promise<CookingLog[]> => {
+
+  return customFetch<CookingLog[]>(getListCookingLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCookingLogsQueryKey = (params?: ListCookingLogsParams,) => {
+    return [
+    `/api/cooking-logs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCookingLogsQueryOptions = <TData = Awaited<ReturnType<typeof listCookingLogs>>, TError = ErrorType<unknown>>(params?: ListCookingLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCookingLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCookingLogsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCookingLogs>>> = ({ signal }) => listCookingLogs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCookingLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCookingLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listCookingLogs>>>
+export type ListCookingLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all cooking log entries
+ */
+
+export function useListCookingLogs<TData = Awaited<ReturnType<typeof listCookingLogs>>, TError = ErrorType<unknown>>(
+ params?: ListCookingLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCookingLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCookingLogsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateCookingLogUrl = () => {
+
+
+
+
+  return `/api/cooking-logs`
+}
+
+/**
+ * @summary Log a cooked meal (triggered by Done! button)
+ */
+export const createCookingLog = async (cookingLogInput: CookingLogInput, options?: RequestInit): Promise<CookingLog> => {
+
+  return customFetch<CookingLog>(getCreateCookingLogUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      cookingLogInput,)
+  }
+);}
+
+
+
+
+export const getCreateCookingLogMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCookingLog>>, TError,{data: BodyType<CookingLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCookingLog>>, TError,{data: BodyType<CookingLogInput>}, TContext> => {
+
+const mutationKey = ['createCookingLog'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCookingLog>>, {data: BodyType<CookingLogInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCookingLog(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCookingLogMutationResult = NonNullable<Awaited<ReturnType<typeof createCookingLog>>>
+    export type CreateCookingLogMutationBody = BodyType<CookingLogInput>
+    export type CreateCookingLogMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Log a cooked meal (triggered by Done! button)
+ */
+export const useCreateCookingLog = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCookingLog>>, TError,{data: BodyType<CookingLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCookingLog>>,
+        TError,
+        {data: BodyType<CookingLogInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCookingLogMutationOptions(options));
+    }
+
+export const getGetCookingStreakUrl = () => {
+
+
+
+
+  return `/api/cooking-logs/streak`
+}
+
+/**
+ * @summary Get the user's current cooking streak
+ */
+export const getCookingStreak = async ( options?: RequestInit): Promise<StreakInfo> => {
+
+  return customFetch<StreakInfo>(getGetCookingStreakUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCookingStreakQueryKey = () => {
+    return [
+    `/api/cooking-logs/streak`
+    ] as const;
+    }
+
+
+export const getGetCookingStreakQueryOptions = <TData = Awaited<ReturnType<typeof getCookingStreak>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCookingStreak>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCookingStreakQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCookingStreak>>> = ({ signal }) => getCookingStreak({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCookingStreak>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCookingStreakQueryResult = NonNullable<Awaited<ReturnType<typeof getCookingStreak>>>
+export type GetCookingStreakQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the user's current cooking streak
+ */
+
+export function useGetCookingStreak<TData = Awaited<ReturnType<typeof getCookingStreak>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCookingStreak>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCookingStreakQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCookingStatsUrl = (params: GetCookingStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/cooking-logs/stats?${stringifiedParams}` : `/api/cooking-logs/stats`
+}
+
+/**
+ * @summary Get aggregated nutrition stats for a period
+ */
+export const getCookingStats = async (params: GetCookingStatsParams, options?: RequestInit): Promise<NutritionStats> => {
+
+  return customFetch<NutritionStats>(getGetCookingStatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCookingStatsQueryKey = (params?: GetCookingStatsParams,) => {
+    return [
+    `/api/cooking-logs/stats`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCookingStatsQueryOptions = <TData = Awaited<ReturnType<typeof getCookingStats>>, TError = ErrorType<unknown>>(params: GetCookingStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCookingStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCookingStatsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCookingStats>>> = ({ signal }) => getCookingStats(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCookingStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCookingStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getCookingStats>>>
+export type GetCookingStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get aggregated nutrition stats for a period
+ */
+
+export function useGetCookingStats<TData = Awaited<ReturnType<typeof getCookingStats>>, TError = ErrorType<unknown>>(
+ params: GetCookingStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCookingStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCookingStatsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

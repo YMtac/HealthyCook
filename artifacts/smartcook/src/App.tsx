@@ -319,11 +319,12 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
     <div className="flex flex-col h-full p-6 relative max-w-2xl mx-auto w-full">
       <header className="mb-8 pt-4 flex justify-between items-start">
         <div>
-          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">HealthyCook</h1>
+          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">SmartCook</h1>
           <p className="font-['Karla'] text-[#6b6560]">What's in your fridge?</p>
         </div>
         <UserAuthButton navigate={(p) => window.location.href = p} />
       </header>
+
       <div className="flex-1">
         <div className="mb-6 relative">
           <form onSubmit={handleSubmit}>
@@ -472,6 +473,7 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
           </div>
         )}
       </div>
+
       <div className="fixed md:absolute bottom-24 md:bottom-6 left-6 right-6 md:left-0 md:right-0 max-w-[382px] mx-auto z-20">
         <button
           onClick={() => navigate({ name: 'preferences' })}
@@ -2149,9 +2151,10 @@ function MainLayout() {
         <div className="blob blob-2"/>
         <div className="blob blob-3"/>
       </div>
+
       <nav className="hidden md:flex flex-col w-64 bg-[#f5f0e6]/80 backdrop-blur border-r border-[#d4c4a8] z-30 shrink-0 h-[100dvh] p-6 justify-between">
         <div>
-          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">HealthyCook</h1>
+          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">SmartCook</h1>
           <ul className="space-y-4">
             <SideNavBtn tab="cook" icon={<ChefHat size={24} />} label="Cook" />
             <SideNavBtn tab="shop" icon={<ShoppingCart size={24} />} label="Shop" />
@@ -2163,6 +2166,7 @@ function MainLayout() {
           <UserAuthButton navigate={(p) => window.location.href = p} />
         </div>
       </nav>
+
       <div className="flex-1 relative h-[100dvh] overflow-hidden z-10">
         <ScreenWrapper isActive={screen.name === 'tabs' && screen.tab === 'cook'}>
           <CookTab navigate={navigate} />
@@ -2220,6 +2224,7 @@ function MainLayout() {
           <FavoritesScreen navigate={navigate} />
         </ScreenWrapper>
       </div>
+
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 pb-safe">
         <div className="bg-[#f5f0e6]/90 backdrop-blur border-t border-[#d4c4a8] px-6 py-4 flex justify-between items-center" style={{ borderRadius: '20px 20px 0 0' }}>
           <NavBtn tab="cook" icon={<ChefHat size={24} />} label="Cook" />

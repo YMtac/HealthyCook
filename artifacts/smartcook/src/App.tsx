@@ -319,12 +319,11 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
     <div className="flex flex-col h-full p-6 relative max-w-2xl mx-auto w-full">
       <header className="mb-8 pt-4 flex justify-between items-start">
         <div>
-          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">SmartCook</h1>
+          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">HealthyCook</h1>
           <p className="font-['Karla'] text-[#6b6560]">What's in your fridge?</p>
         </div>
         <UserAuthButton navigate={(p) => window.location.href = p} />
       </header>
-
       <div className="flex-1">
         <div className="mb-6 relative">
           <form onSubmit={handleSubmit}>
@@ -473,7 +472,6 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
           </div>
         )}
       </div>
-
       <div className="fixed md:absolute bottom-24 md:bottom-6 left-6 right-6 md:left-0 md:right-0 max-w-[382px] mx-auto z-20">
         <button
           onClick={() => navigate({ name: 'preferences' })}

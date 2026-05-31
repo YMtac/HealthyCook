@@ -690,7 +690,7 @@ function IngredientSubstitutionSheet({
           )}
         </div>
 
-        {/* Scrollable content */}
+        {/* Scrollable content — Apply Changes lives here so it's reachable regardless of sheet y-offset */}
         <div className="flex-1 overflow-y-auto px-6">
           <div className="bg-[#f0ebe3] p-4 mb-6" style={{ borderRadius: '20px 40px 20px 40px' }}>
             <p className="text-sm font-['Karla'] text-[#6b6560] leading-relaxed">
@@ -705,7 +705,7 @@ function IngredientSubstitutionSheet({
           {foundIngredients.length === 0 ? (
             <p className="text-center text-[#6b6560] font-['Karla'] text-sm py-8">No specific ingredients found in this step to substitute.</p>
           ) : (
-            <div className="space-y-5 pb-4">
+            <div className="space-y-5">
               <h4 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a]">Ingredients in this step</h4>
               {foundIngredients.map(ingName => {
                 const currentSub = stepSubs[ingName];
@@ -763,16 +763,16 @@ function IngredientSubstitutionSheet({
               })}
             </div>
           )}
-        </div>
 
-        {/* Sticky Apply Changes footer — always visible */}
-        <div className="flex-shrink-0 px-6 pt-3 pb-8 bg-[#f5f0e6] border-t border-[#e8e0d4]">
-          <button
-            onClick={onClose}
-            className="w-full bg-[#8fa68f] text-white py-3.5 font-['Karla'] font-semibold text-base btn-primary"
-          >
-            Apply Changes
-          </button>
+          {/* Apply Changes — inside scroll area so it's always reachable */}
+          <div className="pt-5 pb-10">
+            <button
+              onClick={onClose}
+              className="w-full bg-[#8fa68f] text-white py-3.5 font-['Karla'] font-semibold text-base btn-primary"
+            >
+              Apply Changes
+            </button>
+          </div>
         </div>
       </motion.div>
     </>

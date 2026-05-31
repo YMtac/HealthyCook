@@ -670,7 +670,7 @@ function IngredientSubstitutionSheet({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
         className="fixed bottom-0 left-0 right-0 z-50 bg-[#f5f0e6] shadow-2xl max-w-2xl mx-auto flex flex-col"
-        style={{ borderRadius: '36px 36px 0 0', maxHeight: '92dvh' }}
+        style={{ borderRadius: '36px 36px 0 0', height: '92dvh' }}
       >
         {/* Drag handle + header — always visible */}
         <div className="flex-shrink-0 bg-[#f5f0e6] pt-5 pb-3 px-6 z-10" style={{ borderRadius: '36px 36px 0 0' }}>
@@ -758,7 +758,7 @@ function IngredientSubstitutionSheet({
           )}
 
           {/* Apply Changes — inside scroll area so it's always reachable */}
-          <div className="pt-5 pb-10">
+          <div className="pt-5 pb-20">
             <button
               onClick={onClose}
               className="w-full bg-[#8fa68f] text-white py-3.5 font-['Karla'] font-semibold text-base btn-primary"

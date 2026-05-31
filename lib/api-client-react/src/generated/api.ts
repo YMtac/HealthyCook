@@ -37,7 +37,8 @@ import type {
   ShoppingItem,
   ShoppingItemInput,
   ShoppingItemUpdate,
-  StreakInfo
+  StreakInfo,
+  UpdateCookingLogInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1632,4 +1633,146 @@ export function useGetCookingStats<TData = Awaited<ReturnType<typeof getCookingS
 
 
 
+
+export const getDeleteCookingLogUrl = (id: number,) => {
+
+
+
+
+  return `/api/cooking-logs/${id}`
+}
+
+/**
+ * @summary Delete a cooking log entry
+ */
+export const deleteCookingLog = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCookingLogUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCookingLogMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCookingLog>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCookingLog>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteCookingLog'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCookingLog>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteCookingLog(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCookingLogMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCookingLog>>>
+
+    export type DeleteCookingLogMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a cooking log entry
+ */
+export const useDeleteCookingLog = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCookingLog>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCookingLog>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCookingLogMutationOptions(options));
+    }
+
+export const getUpdateCookingLogUrl = (id: number,) => {
+
+
+
+
+  return `/api/cooking-logs/${id}`
+}
+
+/**
+ * @summary Update a cooking log entry (change date or recipe name)
+ */
+export const updateCookingLog = async (id: number,
+    updateCookingLogInput: UpdateCookingLogInput, options?: RequestInit): Promise<CookingLog> => {
+
+  return customFetch<CookingLog>(getUpdateCookingLogUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateCookingLogInput,)
+  }
+);}
+
+
+
+
+export const getUpdateCookingLogMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCookingLog>>, TError,{id: number;data: BodyType<UpdateCookingLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCookingLog>>, TError,{id: number;data: BodyType<UpdateCookingLogInput>}, TContext> => {
+
+const mutationKey = ['updateCookingLog'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCookingLog>>, {id: number;data: BodyType<UpdateCookingLogInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateCookingLog(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCookingLogMutationResult = NonNullable<Awaited<ReturnType<typeof updateCookingLog>>>
+    export type UpdateCookingLogMutationBody = BodyType<UpdateCookingLogInput>
+    export type UpdateCookingLogMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a cooking log entry (change date or recipe name)
+ */
+export const useUpdateCookingLog = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCookingLog>>, TError,{id: number;data: BodyType<UpdateCookingLogInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCookingLog>>,
+        TError,
+        {id: number;data: BodyType<UpdateCookingLogInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateCookingLogMutationOptions(options));
+    }
 

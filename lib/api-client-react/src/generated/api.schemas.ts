@@ -151,6 +151,12 @@ export interface CookingLogInput {
   fat: string;
 }
 
+export interface UpdateCookingLogInput {
+  recipeName?: string;
+  /** ISO date string (YYYY-MM-DD or full ISO) */
+  cookedAt?: string;
+}
+
 export interface StreakInfo {
   currentStreak: number;
   longestStreak: number;

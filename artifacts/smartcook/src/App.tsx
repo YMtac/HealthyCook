@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ChefHat, ShoppingCart, Compass, Search, Plus, ArrowLeft, Heart, Check, X, Clock, Flame, Loader2, Minus, CalendarDays, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChefHat, ShoppingCart, Compass, Search, Plus, ArrowLeft, Heart, Check, X, Clock, Flame, Loader2, Minus, CalendarDays, ChevronLeft, ChevronRight, Sparkles, Trash2, Pencil } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
   useListIngredients, useCreateIngredient, useDeleteIngredient, getListIngredientsQueryKey,
@@ -11,7 +11,7 @@ import {
   useListShoppingItems, useCreateShoppingItem, useUpdateShoppingItem, useDeleteShoppingItem, getListShoppingItemsQueryKey,
   useListFavorites, useAddFavorite, useRemoveFavorite, useGetFavoriteStatus, getListFavoritesQueryKey, getGetFavoriteStatusQueryKey,
   useGetRecommendations,
-  useCreateCookingLog, useListCookingLogs, useGetCookingStreak, useGetCookingStats, getGetCookingStreakQueryKey, getListCookingLogsQueryKey,
+  useCreateCookingLog, useListCookingLogs, useGetCookingStreak, useGetCookingStats, useDeleteCookingLog, useUpdateCookingLog, getGetCookingStreakQueryKey, getListCookingLogsQueryKey,
   ShoppingItem, Recipe, CookingLog
 } from "@workspace/api-client-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
@@ -671,10 +671,11 @@ function IngredientSubstitutionSheet({
         animate={{ y: isExpanded ? '5%' : '35%' }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-[#f5f0e6] shadow-2xl max-w-2xl mx-auto overflow-y-auto"
-        style={{ borderRadius: '36px 36px 0 0', maxHeight: '95dvh' }}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-[#f5f0e6] shadow-2xl max-w-2xl mx-auto flex flex-col"
+        style={{ borderRadius: '36px 36px 0 0', maxHeight: '92dvh' }}
       >
-        <div className="sticky top-0 bg-[#f5f0e6] pt-5 pb-3 px-6 z-10">
+        {/* Drag handle + header — always visible */}
+        <div className="flex-shrink-0 bg-[#f5f0e6] pt-5 pb-3 px-6 z-10" style={{ borderRadius: '36px 36px 0 0' }}>
           <div className="w-12 h-1.5 bg-[#d4c4a8] rounded-full mx-auto mb-4 cursor-grab" />
           <div className="flex items-center justify-between">
             <h3 className="font-['Fraunces'] italic text-[#2d2a26] text-xl">
@@ -689,7 +690,8 @@ function IngredientSubstitutionSheet({
           )}
         </div>
 
-        <div className="px-6 pb-10">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6">
           <div className="bg-[#f0ebe3] p-4 mb-6" style={{ borderRadius: '20px 40px 20px 40px' }}>
             <p className="text-sm font-['Karla'] text-[#6b6560] leading-relaxed">
               {modifiedDesc.split(/~~(\w[\w\s]*)~~/).map((part, i) =>
@@ -703,7 +705,7 @@ function IngredientSubstitutionSheet({
           {foundIngredients.length === 0 ? (
             <p className="text-center text-[#6b6560] font-['Karla'] text-sm py-8">No specific ingredients found in this step to substitute.</p>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-5 pb-4">
               <h4 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a]">Ingredients in this step</h4>
               {foundIngredients.map(ingName => {
                 const currentSub = stepSubs[ingName];
@@ -761,10 +763,13 @@ function IngredientSubstitutionSheet({
               })}
             </div>
           )}
+        </div>
 
+        {/* Sticky Apply Changes footer — always visible */}
+        <div className="flex-shrink-0 px-6 pt-3 pb-8 bg-[#f5f0e6] border-t border-[#e8e0d4]">
           <button
             onClick={onClose}
-            className="w-full mt-8 bg-[#8fa68f] text-white py-3 font-['Karla'] font-semibold btn-primary"
+            className="w-full bg-[#8fa68f] text-white py-3.5 font-['Karla'] font-semibold text-base btn-primary"
           >
             Apply Changes
           </button>
@@ -1603,7 +1608,7 @@ function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
         />
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-4 mb-6 hide-scrollbar -mx-6 px-6">
+      <div className="flex flex-wrap gap-2 pb-2 mb-6">
         {categories.map(c => (
           <button
             key={c}
@@ -1671,14 +1676,48 @@ type CalendarView = 'week' | 'month' | 'year';
 
 function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
   const [view, setView] = useState<CalendarView>('month');
-  const [monthOffset, setMonthOffset] = useState(0); // 0 = current month
+  const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [editingLogId, setEditingLogId] = useState<number | null>(null);
+  const [editDateValue, setEditDateValue] = useState('');
+  const [deletingLogId, setDeletingLogId] = useState<number | null>(null);
 
   const { data: streak } = useGetCookingStreak();
   const { data: logs = [] } = useListCookingLogs();
   const { data: statsWeek } = useGetCookingStats({ period: 'week' });
   const { data: statsMonth } = useGetCookingStats({ period: 'month' });
   const { data: statsYear } = useGetCookingStats({ period: 'year' });
+  const deleteLog = useDeleteCookingLog();
+  const updateLog = useUpdateCookingLog();
+  const queryClient = useQueryClient();
+
+  const handleDeleteLog = (id: number) => {
+    setDeletingLogId(id);
+    deleteLog.mutate({ id }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListCookingLogsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetCookingStreakQueryKey() });
+        setDeletingLogId(null);
+      },
+      onError: () => setDeletingLogId(null),
+    });
+  };
+
+  const handleStartEdit = (log: CookingLog) => {
+    setEditingLogId(log.id);
+    setEditDateValue(new Date(log.cookedAt).toISOString().split('T')[0]);
+  };
+
+  const handleSaveEdit = (id: number) => {
+    if (!editDateValue) return;
+    updateLog.mutate({ id, data: { cookedAt: editDateValue } }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListCookingLogsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetCookingStreakQueryKey() });
+        setEditingLogId(null);
+      },
+    });
+  };
 
   const stats = view === 'week' ? statsWeek : view === 'month' ? statsMonth : statsYear;
 
@@ -1768,17 +1807,51 @@ function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) 
               {new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
             </h4>
             {selectedLogs.map(log => (
-              <div key={log.id} className="flex items-center gap-4 p-4 bg-[#f5f0e6]" style={{ borderRadius: '20px 40px 20px 40px' }}>
-                {log.imageUrl && (
-                  <div className="w-14 h-14 overflow-hidden shrink-0" style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}>
-                    <img src={log.imageUrl} alt={log.recipeName} className="w-full h-full object-cover" />
+              <motion.div key={log.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-[#f5f0e6] overflow-hidden" style={{ borderRadius: '20px 40px 20px 40px' }}>
+                <div className="flex items-center gap-4 p-4">
+                  {log.imageUrl && (
+                    <div className="w-14 h-14 overflow-hidden shrink-0" style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}>
+                      <img src={log.imageUrl} alt={log.recipeName} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-['Fraunces'] font-bold text-[#2d2a26] truncate">{log.recipeName}</p>
+                    <p className="text-xs font-['Karla'] text-[#6b6560]">{log.kcal} kcal · {log.protein} protein</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => handleStartEdit(log)}
+                      className="p-2 rounded-full hover:bg-[#e8e0d4] text-[#8fa68f] transition-colors">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={() => handleDeleteLog(log.id)}
+                      disabled={deletingLogId === log.id}
+                      className="p-2 rounded-full hover:bg-[#f5d4c8] text-[#c67d5a] transition-colors disabled:opacity-40">
+                      {deletingLogId === log.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                    </button>
+                  </div>
+                </div>
+                {editingLogId === log.id && (
+                  <div className="px-4 pb-4 flex items-center gap-3">
+                    <input
+                      type="date"
+                      value={editDateValue}
+                      onChange={e => setEditDateValue(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="flex-1 bg-[#f0ebe3] border border-[#d4c4a8] rounded-xl px-3 py-2 text-sm font-['Karla'] text-[#2d2a26] focus:outline-none focus:border-[#8fa68f]"
+                    />
+                    <button onClick={() => handleSaveEdit(log.id)}
+                      disabled={updateLog.isPending}
+                      className="px-4 py-2 bg-[#8fa68f] text-white text-xs font-['Karla'] font-semibold rounded-xl disabled:opacity-50">
+                      Save
+                    </button>
+                    <button onClick={() => setEditingLogId(null)}
+                      className="px-3 py-2 text-[#6b6560] text-xs font-['Karla'] hover:text-[#c67d5a]">
+                      Cancel
+                    </button>
                   </div>
                 )}
-                <div className="flex-1">
-                  <p className="font-['Fraunces'] font-bold text-[#2d2a26]">{log.recipeName}</p>
-                  <p className="text-xs font-['Karla'] text-[#6b6560]">{log.kcal} kcal · {log.protein} protein</p>
-                </div>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
         )}
@@ -1869,17 +1942,51 @@ function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) 
             ) : (
               <div className="space-y-3">
                 {selectedLogs.map(log => (
-                  <div key={log.id} className="flex items-center gap-4 p-4 bg-[#f5f0e6]" style={{ borderRadius: '20px 40px 20px 40px' }}>
-                    {log.imageUrl && (
-                      <div className="w-14 h-14 overflow-hidden shrink-0" style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}>
-                        <img src={log.imageUrl} alt={log.recipeName} className="w-full h-full object-cover" />
+                  <motion.div key={log.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    className="bg-[#f5f0e6] overflow-hidden" style={{ borderRadius: '20px 40px 20px 40px' }}>
+                    <div className="flex items-center gap-4 p-4">
+                      {log.imageUrl && (
+                        <div className="w-14 h-14 overflow-hidden shrink-0" style={{ borderRadius: '40% 60% 60% 40% / 60% 40% 40% 60%' }}>
+                          <img src={log.imageUrl} alt={log.recipeName} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-['Fraunces'] font-bold text-[#2d2a26] truncate">{log.recipeName}</p>
+                        <p className="text-xs font-['Karla'] text-[#6b6560]">{log.kcal} kcal · {log.protein} protein · {log.carbs} carbs</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => handleStartEdit(log)}
+                          className="p-2 rounded-full hover:bg-[#e8e0d4] text-[#8fa68f] transition-colors">
+                          <Pencil size={15} />
+                        </button>
+                        <button onClick={() => handleDeleteLog(log.id)}
+                          disabled={deletingLogId === log.id}
+                          className="p-2 rounded-full hover:bg-[#f5d4c8] text-[#c67d5a] transition-colors disabled:opacity-40">
+                          {deletingLogId === log.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                        </button>
+                      </div>
+                    </div>
+                    {editingLogId === log.id && (
+                      <div className="px-4 pb-4 flex items-center gap-3">
+                        <input
+                          type="date"
+                          value={editDateValue}
+                          onChange={e => setEditDateValue(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="flex-1 bg-[#f0ebe3] border border-[#d4c4a8] rounded-xl px-3 py-2 text-sm font-['Karla'] text-[#2d2a26] focus:outline-none focus:border-[#8fa68f]"
+                        />
+                        <button onClick={() => handleSaveEdit(log.id)}
+                          disabled={updateLog.isPending}
+                          className="px-4 py-2 bg-[#8fa68f] text-white text-xs font-['Karla'] font-semibold rounded-xl disabled:opacity-50">
+                          Save
+                        </button>
+                        <button onClick={() => setEditingLogId(null)}
+                          className="px-3 py-2 text-[#6b6560] text-xs font-['Karla'] hover:text-[#c67d5a]">
+                          Cancel
+                        </button>
                       </div>
                     )}
-                    <div className="flex-1">
-                      <p className="font-['Fraunces'] font-bold text-[#2d2a26]">{log.recipeName}</p>
-                      <p className="text-xs font-['Karla'] text-[#6b6560]">{log.kcal} kcal · {log.protein} protein · {log.carbs} carbs</p>
-                    </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

@@ -348,3 +348,36 @@ export const GetCookingStatsResponse = zod.object({
 })
 
 
+/**
+ * @summary Delete a cooking log entry
+ */
+export const DeleteCookingLogParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Update a cooking log entry (change date or recipe name)
+ */
+export const UpdateCookingLogParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateCookingLogBody = zod.object({
+  "recipeName": zod.string().optional(),
+  "cookedAt": zod.string().optional().describe('ISO date string (YYYY-MM-DD or full ISO)')
+})
+
+export const UpdateCookingLogResponse = zod.object({
+  "id": zod.number(),
+  "recipeId": zod.number(),
+  "recipeName": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "kcal": zod.number(),
+  "protein": zod.string(),
+  "carbs": zod.string(),
+  "fat": zod.string(),
+  "cookedAt": zod.coerce.date()
+})
+
+

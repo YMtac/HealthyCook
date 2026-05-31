@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { db, cookingLogsTable, insertCookingLogSchema } from "@workspace/db";
-import { gte, lte, and, desc } from "drizzle-orm";
-
+import { gte, lte, and, desc, eq } from "drizzle-orm";
 const router = Router();
 
 router.get("/cooking-logs/streak", async (_req, res) => {
@@ -128,6 +127,42 @@ router.post("/cooking-logs", async (req, res) => {
   }
   const [row] = await db.insert(cookingLogsTable).values(parsed.data).returning();
   res.status(201).json({
+    id: row.id,
+    recipeId: row.recipeId ?? 0,
+    recipeName: row.recipeName,
+    imageUrl: row.imageUrl ?? null,
+    kcal: row.kcal,
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    cookedAt: row.cookedAt.toISOString(),
+  });
+});
+
+router.delete("/cooking-logs/:id", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  await db.delete(cookingLogsTable).where(eq(cookingLogsTable.id, id));
+  res.status(204).end();
+});
+
+router.patch("/cooking-logs/:id", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const { recipeName, cookedAt } = req.body as { recipeName?: string; cookedAt?: string };
+
+  const updates: Partial<typeof cookingLogsTable.$inferInsert> = {};
+  if (typeof recipeName === "string" && recipeName.trim()) updates.recipeName = recipeName.trim();
+  if (typeof cookedAt === "string" && cookedAt.trim()) updates.cookedAt = new Date(cookedAt);
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "Nothing to update" }); return;
+  }
+
+  const [row] = await db.update(cookingLogsTable).set(updates).where(eq(cookingLogsTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "Not found" }); return; }
+
+  res.json({
     id: row.id,
     recipeId: row.recipeId ?? 0,
     recipeName: row.recipeName,

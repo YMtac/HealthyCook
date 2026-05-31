@@ -29,3 +29,4 @@ export * from './shoppingItem';
 export * from './shoppingItemInput';
 export * from './shoppingItemUpdate';
 export * from './streakInfo';
+export * from './updateCookingLogInput';

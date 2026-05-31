@@ -393,6 +393,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/NutritionStats"
 
+  /cooking-logs/{id}:
+    delete:
+      operationId: deleteCookingLog
+      tags: [cooking-logs]
+      summary: Delete a cooking log entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+    patch:
+      operationId: updateCookingLog
+      tags: [cooking-logs]
+      summary: Update a cooking log entry (change date or recipe name)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCookingLogInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookingLog"
+
 components:
   schemas:
     HealthStatus:
@@ -657,6 +695,15 @@ components:
           type: string
         fat:
           type: string
+
+    UpdateCookingLogInput:
+      type: object
+      properties:
+        recipeName:
+          type: string
+        cookedAt:
+          type: string
+          description: ISO date string (YYYY-MM-DD or full ISO)
 
     StreakInfo:
       type: object

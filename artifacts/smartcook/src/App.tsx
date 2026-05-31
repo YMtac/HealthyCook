@@ -637,7 +637,6 @@ function IngredientSubstitutionSheet({
   onChange: (newSubs: SubstitutionState) => void;
   onClose: () => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const foundIngredients = getIngredientsInStep(step.description, recipeIngredients);
   const stepSubs = substitutions[stepIdx] ?? {};
 
@@ -665,10 +664,9 @@ function IngredientSubstitutionSheet({
         dragElastic={0.2}
         onDragEnd={(_e, info) => {
           if (info.offset.y > 120) onClose();
-          if (info.offset.y < -80) setIsExpanded(true);
         }}
         initial={{ y: '100%' }}
-        animate={{ y: isExpanded ? '5%' : '35%' }}
+        animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
         className="fixed bottom-0 left-0 right-0 z-50 bg-[#f5f0e6] shadow-2xl max-w-2xl mx-auto flex flex-col"
@@ -683,11 +681,6 @@ function IngredientSubstitutionSheet({
             </h3>
             <button onClick={onClose} className="p-1 text-[#6b6560] hover:text-[#c67d5a]"><X size={20} /></button>
           </div>
-          {!isExpanded && (
-            <p className="text-xs text-[#8fa68f] font-['Karla'] mt-1 cursor-pointer" onClick={() => setIsExpanded(true)}>
-              Swipe up to expand ↑
-            </p>
-          )}
         </div>
 
         {/* Scrollable content — Apply Changes lives here so it's reachable regardless of sheet y-offset */}

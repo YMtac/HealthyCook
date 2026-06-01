@@ -320,7 +320,8 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
     <div className="flex flex-col h-full p-6 relative max-w-2xl mx-auto w-full">
       <header className="mb-8 pt-4 flex justify-between items-start">
         <div>
-          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">SmartCook</h1>
+          <p className="font-['Karla'] text-[10px] text-[#b0a898] mb-1 tracking-wide">IUI26-group6</p>
+          <h1 className="text-[52px] font-['Fraunces'] italic text-[#2d2a26] leading-none mb-2">Healthy Cook</h1>
           <p className="font-['Karla'] text-[#6b6560]">What's in your fridge?</p>
         </div>
         <UserAuthButton navigate={(p) => window.location.href = p} />
@@ -443,7 +444,7 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
         </div>
 
         {topFavorites.length > 0 && (
-          <div className="mt-12 mb-4">
+          <div className="mt-12 mb-32">
             <div className="flex items-center justify-between mb-4">
               <h3 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a]">Top Favourites</h3>
               <button
@@ -2276,7 +2277,7 @@ function MainLayout() {
 
       <nav className="hidden md:flex flex-col w-64 bg-[#f5f0e6]/80 backdrop-blur border-r border-[#d4c4a8] z-30 shrink-0 h-[100dvh] p-6 justify-between">
         <div>
-          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">SmartCook</h1>
+          <h1 className="text-3xl font-['Fraunces'] italic text-[#2d2a26] mb-12 px-2 tracking-tight">Healthy Cook</h1>
           <ul className="space-y-4">
             <SideNavBtn tab="cook" icon={<ChefHat size={24} />} label="Cook" />
             <SideNavBtn tab="shop" icon={<ShoppingCart size={24} />} label="Shop" />
@@ -2370,7 +2371,7 @@ function ClerkProviderWithRoutes() {
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
-      localization={{ signIn: { start: { title: "Welcome back", subtitle: "Sign in to SmartCook" } }, signUp: { start: { title: "Start cooking smarter", subtitle: "Join SmartCook today" } } }}
+      localization={{ signIn: { start: { title: "Welcome back", subtitle: "Sign in to Healthy Cook" } }, signUp: { start: { title: "Start cooking smarter", subtitle: "Join Healthy Cook today" } } }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >

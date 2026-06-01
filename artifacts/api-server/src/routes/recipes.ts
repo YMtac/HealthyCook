@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, recipesTable, ingredientsTable, favoritesTable } from "@workspace/db";
 import { eq, ilike, and, lte, inArray } from "drizzle-orm";
 import { GenerateRecipeBody, ListRecipesQueryParams, GetRecipeParams } from "@workspace/api-zod";
+import { generateRecipeWithAI, generateFoodImage } from "../services/openai.js";
 
 const router = Router();
 
@@ -48,39 +49,122 @@ router.post("/recipes/generate", async (req, res) => {
     return;
   }
 
-  const { ingredientIds, difficulty, cuisineStyle } = parsed.data;
+  const { ingredientIds, timePreference, difficulty, cookingMethod, cuisineStyle } = parsed.data;
 
   let userIngredients: string[] = [];
   if (ingredientIds && ingredientIds.length > 0) {
     const rows = await db.select().from(ingredientsTable).where(inArray(ingredientsTable.id, ingredientIds));
-    userIngredients = rows.map((r) => r.name.toLowerCase());
+    userIngredients = rows.map((r) => r.name);
   }
 
-  const conditions: any[] = [];
-  if (difficulty && difficulty !== "Any") conditions.push(eq(recipesTable.difficulty, difficulty));
-  if (cuisineStyle && cuisineStyle !== "Any") conditions.push(eq(recipesTable.category, cuisineStyle));
+  req.log.info({ userIngredients, difficulty, cuisineStyle }, "Generating AI recipe");
 
-  const recipes = conditions.length > 0
-    ? await db.select().from(recipesTable).where(and(...conditions))
-    : await db.select().from(recipesTable);
-
-  if (recipes.length === 0) {
-    const any = await db.select().from(recipesTable).limit(1);
-    if (any.length === 0) { res.status(404).json({ error: "No recipes found" }); return; }
-    res.json(formatRecipeFull(any[0]));
-    return;
-  }
-
-  const scored = recipes.map((r) => {
-    const recipeIngrs = ((r.ingredients as any[]) ?? []).map((i: any) => i.name?.toLowerCase() ?? "");
-    const matches = recipeIngrs.filter((name) => userIngredients.some((u) => name.includes(u) || u.includes(name)));
-    const missing = recipeIngrs.filter((name) => !userIngredients.some((u) => name.includes(u) || u.includes(name)));
-    return { recipe: r, score: matches.length, missing };
+  const generated = await generateRecipeWithAI({
+    availableIngredients: userIngredients,
+    timePreference: timePreference ?? undefined,
+    difficulty: difficulty ?? undefined,
+    cookingMethod: cookingMethod ?? undefined,
+    cuisineStyle: cuisineStyle ?? undefined,
   });
 
-  scored.sort((a, b) => b.score - a.score);
-  const best = scored[0];
-  res.json(formatRecipeFull(best.recipe, best.missing));
+  // Generate image in parallel with nothing — just do it
+  const imageUrl = await generateFoodImage(generated.name, generated.category);
+
+  const [saved] = await db
+    .insert(recipesTable)
+    .values({
+      name: generated.name,
+      emoji: generated.emoji,
+      imageUrl: imageUrl ?? null,
+      timeMinutes: generated.timeMinutes,
+      difficulty: generated.difficulty,
+      category: generated.category,
+      diet: generated.diet ?? null,
+      kcal: generated.nutrition.kcal,
+      protein: generated.nutrition.protein,
+      carbs: generated.nutrition.carbs,
+      fat: generated.nutrition.fat,
+      ingredients: generated.ingredients,
+      steps: generated.steps,
+      isTrending: false,
+    })
+    .returning();
+
+  req.log.info({ recipeId: saved.id, name: saved.name }, "AI recipe saved");
+  res.json(formatRecipeFull(saved, generated.missingIngredients ?? []));
+});
+
+const SEED_CATEGORIES = [
+  "Italian", "Asian", "American", "Mexican",
+  "Mediterranean", "Indian", "Breakfast", "Dessert", "Soup", "Salad",
+];
+const SEED_DIFFICULTIES = ["Easy", "Medium", "Hard"];
+
+router.post("/recipes/ai-seed", async (req, res) => {
+  const count = Math.min(Number((req.body as any)?.count) || 6, 10);
+
+  req.log.info({ count }, "Starting AI recipe seeding");
+
+  // Generate all recipe texts in parallel
+  const categories = SEED_CATEGORIES.slice(0, count);
+  const textResults = await Promise.allSettled(
+    categories.map((category, i) =>
+      generateRecipeWithAI({
+        availableIngredients: [],
+        cuisineStyle: category,
+        difficulty: SEED_DIFFICULTIES[i % 3],
+      }),
+    ),
+  );
+
+  // Generate images in parallel for successful text results
+  const imageResults = await Promise.allSettled(
+    textResults.map((r) =>
+      r.status === "fulfilled"
+        ? generateFoodImage(r.value.name, r.value.category)
+        : Promise.resolve(null),
+    ),
+  );
+
+  const recipes = [];
+  for (let i = 0; i < textResults.length; i++) {
+    const textResult = textResults[i];
+    if (textResult.status === "rejected") {
+      req.log.warn({ category: categories[i], err: textResult.reason }, "Recipe text generation failed");
+      continue;
+    }
+    const generated = textResult.value;
+    const imgResult = imageResults[i];
+    const imageUrl = imgResult.status === "fulfilled" ? imgResult.value : null;
+
+    try {
+      const [saved] = await db
+        .insert(recipesTable)
+        .values({
+          name: generated.name,
+          emoji: generated.emoji,
+          imageUrl: imageUrl ?? null,
+          timeMinutes: generated.timeMinutes,
+          difficulty: generated.difficulty,
+          category: generated.category,
+          diet: generated.diet ?? null,
+          kcal: generated.nutrition.kcal,
+          protein: generated.nutrition.protein,
+          carbs: generated.nutrition.carbs,
+          fat: generated.nutrition.fat,
+          ingredients: generated.ingredients,
+          steps: generated.steps,
+          isTrending: i < 3,
+        })
+        .returning();
+      recipes.push(formatRecipeSummary(saved));
+      req.log.info({ recipeId: saved.id, name: saved.name }, "AI-seeded recipe saved");
+    } catch (err) {
+      req.log.error({ err, name: generated.name }, "Failed to save seeded recipe");
+    }
+  }
+
+  res.json({ generated: recipes.length, recipes });
 });
 
 router.get("/recipes", async (req, res) => {

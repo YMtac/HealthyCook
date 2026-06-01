@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AiSeedInput,
+  AiSeedResult,
   CookingLog,
   CookingLogInput,
   FavoriteStatus,
@@ -357,7 +359,7 @@ export const getGenerateRecipeUrl = () => {
 }
 
 /**
- * @summary Generate a recipe from current ingredients and preferences
+ * @summary Generate a recipe from current ingredients and preferences using AI
  */
 export const generateRecipe = async (generateRecipeInput: GenerateRecipeInput, options?: RequestInit): Promise<Recipe> => {
 
@@ -406,7 +408,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GenerateRecipeMutationError = ErrorType<unknown>
 
     /**
- * @summary Generate a recipe from current ingredients and preferences
+ * @summary Generate a recipe from current ingredients and preferences using AI
  */
 export const useGenerateRecipe = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateRecipe>>, TError,{data: BodyType<GenerateRecipeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -417,6 +419,77 @@ export const useGenerateRecipe = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getGenerateRecipeMutationOptions(options));
+    }
+
+export const getAiSeedRecipesUrl = () => {
+
+
+
+
+  return `/api/recipes/ai-seed`
+}
+
+/**
+ * @summary Generate and store AI recipes for the Explore page
+ */
+export const aiSeedRecipes = async (aiSeedInput?: AiSeedInput, options?: RequestInit): Promise<AiSeedResult> => {
+
+  return customFetch<AiSeedResult>(getAiSeedRecipesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      aiSeedInput,)
+  }
+);}
+
+
+
+
+export const getAiSeedRecipesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof aiSeedRecipes>>, TError,{data?: BodyType<AiSeedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof aiSeedRecipes>>, TError,{data?: BodyType<AiSeedInput>}, TContext> => {
+
+const mutationKey = ['aiSeedRecipes'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof aiSeedRecipes>>, {data?: BodyType<AiSeedInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  aiSeedRecipes(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AiSeedRecipesMutationResult = NonNullable<Awaited<ReturnType<typeof aiSeedRecipes>>>
+    export type AiSeedRecipesMutationBody = BodyType<AiSeedInput> | undefined
+    export type AiSeedRecipesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate and store AI recipes for the Explore page
+ */
+export const useAiSeedRecipes = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof aiSeedRecipes>>, TError,{data?: BodyType<AiSeedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof aiSeedRecipes>>,
+        TError,
+        {data?: BodyType<AiSeedInput>},
+        TContext
+      > => {
+      return useMutation(getAiSeedRecipesMutationOptions(options));
     }
 
 export const getListRecipesUrl = (params?: ListRecipesParams,) => {

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './aiSeedInput';
+export * from './aiSeedResult';
 export * from './cookingLog';
 export * from './cookingLogInput';
 export * from './favoriteStatus';
@@ -22,6 +24,7 @@ export * from './nutritionStats';
 export * from './recipe';
 export * from './recipeIngredient';
 export * from './recipeStep';
+export * from './recipeStepSubstitutes';
 export * from './recipeSummary';
 export * from './recommendations';
 export * from './recommendedIngredient';

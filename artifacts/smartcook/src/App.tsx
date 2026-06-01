@@ -12,6 +12,7 @@ import {
   useListFavorites, useAddFavorite, useRemoveFavorite, useGetFavoriteStatus, getListFavoritesQueryKey, getGetFavoriteStatusQueryKey,
   useGetRecommendations,
   useCreateCookingLog, useListCookingLogs, useGetCookingStreak, useGetCookingStats, useDeleteCookingLog, useUpdateCookingLog, getGetCookingStreakQueryKey, getListCookingLogsQueryKey,
+  useAiSeedRecipes,
   ShoppingItem, Recipe, CookingLog
 } from "@workspace/api-client-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
@@ -630,7 +631,7 @@ function IngredientSubstitutionSheet({
   onChange,
   onClose,
 }: {
-  step: { number: number; title: string; description: string };
+  step: { number: number; title: string; description: string; substitutes?: Record<string, string[]> };
   stepIdx: number;
   recipeIngredients: Array<{ name: string; emoji: string; quantity: string }>;
   substitutions: SubstitutionState;
@@ -702,7 +703,8 @@ function IngredientSubstitutionSheet({
               <h4 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a]">Ingredients in this step</h4>
               {foundIngredients.map(ingName => {
                 const currentSub = stepSubs[ingName];
-                const subs = getSubstitutes(ingName);
+                // Use AI-provided substitutes when available, fallback to hardcoded list
+                const subs = step.substitutes?.[ingName] ?? step.substitutes?.[ingName.toLowerCase()] ?? getSubstitutes(ingName);
                 const recipe_ing = recipeIngredients.find(r => r.name.toLowerCase() === ingName.toLowerCase());
                 return (
                   <div key={ingName} className="p-4 bg-white/60" style={{ borderRadius: '20px 30px 20px 30px' }}>
@@ -1556,7 +1558,13 @@ function AddItemScreen({ navigate, onBack }: { navigate: (screen: ScreenState) =
 function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("All");
-  
+  const queryClient = useQueryClient();
+  const aiSeed = useAiSeedRecipes({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() }),
+    }
+  });
+
   const { data: recipes = [], isLoading } = useListRecipes({ search, category: category !== "All" ? category : undefined });
 
   useEffect(() => {
@@ -1586,7 +1594,21 @@ function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
     <div className="flex flex-col h-full p-6 pb-32 bg-transparent overflow-y-auto relative w-full max-w-5xl mx-auto">
       <header className="mb-8 pt-4 flex justify-between items-start">
         <h1 className="text-[40px] font-['Fraunces'] italic text-[#2d2a26]">Explore</h1>
-        <UserAuthButton navigate={(p) => window.location.href = p} />
+        <div className="flex flex-col items-end gap-2 mt-1">
+          <UserAuthButton navigate={(p) => window.location.href = p} />
+          <button
+            onClick={() => aiSeed.mutate({ data: { count: 6 } })}
+            disabled={aiSeed.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8fa68f] text-white text-xs font-['Karla'] font-semibold disabled:opacity-60 transition-all hover:bg-[#7a917a]"
+            style={{ borderRadius: '20px 10px 20px 10px' }}
+          >
+            {aiSeed.isPending ? (
+              <><Loader2 size={13} className="animate-spin" /> Generating…</>
+            ) : (
+              <><Sparkles size={13} /> AI Generate</>
+            )}
+          </button>
+        </div>
       </header>
 
       <div className="relative mb-8">

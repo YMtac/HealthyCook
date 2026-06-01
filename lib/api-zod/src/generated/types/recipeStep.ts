@@ -5,9 +5,11 @@
  * SmartCook API
  * OpenAPI spec version: 0.1.0
  */
+import type { RecipeStepSubstitutes } from './recipeStepSubstitutes';
 
 export interface RecipeStep {
   number: number;
   title: string;
   description: string;
+  substitutes?: RecipeStepSubstitutes;
 }

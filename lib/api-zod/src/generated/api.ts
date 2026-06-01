@@ -45,7 +45,7 @@ export const DeleteIngredientParams = zod.object({
 
 
 /**
- * @summary Generate a recipe from current ingredients and preferences
+ * @summary Generate a recipe from current ingredients and preferences using AI
  */
 export const GenerateRecipeBody = zod.object({
   "ingredientIds": zod.array(zod.number()),
@@ -78,9 +78,37 @@ export const GenerateRecipeResponse = zod.object({
   "steps": zod.array(zod.object({
   "number": zod.number(),
   "title": zod.string(),
-  "description": zod.string()
+  "description": zod.string(),
+  "substitutes": zod.record(zod.string(), zod.array(zod.string())).optional()
 })),
   "missingIngredients": zod.array(zod.string()).optional()
+})
+
+
+/**
+ * @summary Generate and store AI recipes for the Explore page
+ */
+export const aiSeedRecipesBodyCountMax = 10;
+
+
+
+export const AiSeedRecipesBody = zod.object({
+  "count": zod.number().min(1).max(aiSeedRecipesBodyCountMax).optional()
+})
+
+export const AiSeedRecipesResponse = zod.object({
+  "generated": zod.number(),
+  "recipes": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "timeMinutes": zod.number(),
+  "difficulty": zod.string(),
+  "category": zod.string(),
+  "kcal": zod.number(),
+  "isFavorited": zod.boolean().optional()
+}))
 })
 
 
@@ -156,7 +184,8 @@ export const GetRecipeResponse = zod.object({
   "steps": zod.array(zod.object({
   "number": zod.number(),
   "title": zod.string(),
-  "description": zod.string()
+  "description": zod.string(),
+  "substitutes": zod.record(zod.string(), zod.array(zod.string())).optional()
 })),
   "missingIngredients": zod.array(zod.string()).optional()
 })

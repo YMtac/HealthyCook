@@ -81,7 +81,7 @@ paths:
     post:
       operationId: generateRecipe
       tags: [recipes]
-      summary: Generate a recipe from current ingredients and preferences
+      summary: Generate a recipe from current ingredients and preferences using AI
       requestBody:
         required: true
         content:
@@ -95,6 +95,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Recipe"
+
+  /recipes/ai-seed:
+    post:
+      operationId: aiSeedRecipes
+      tags: [recipes]
+      summary: Generate and store AI recipes for the Explore page
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiSeedInput"
+      responses:
+        "200":
+          description: Seeding result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSeedResult"
 
   /recipes:
     get:
@@ -483,6 +502,12 @@ components:
           type: string
         description:
           type: string
+        substitutes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
 
     RecipeIngredient:
       type: object
@@ -715,6 +740,25 @@ components:
           type: integer
         totalCooked:
           type: integer
+
+    AiSeedInput:
+      type: object
+      properties:
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    AiSeedResult:
+      type: object
+      required: [generated, recipes]
+      properties:
+        generated:
+          type: integer
+        recipes:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeSummary"
 
     NutritionStats:
       type: object

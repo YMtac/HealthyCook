@@ -27,10 +27,13 @@ export interface Nutrition {
   fat: string;
 }
 
+export type RecipeStepSubstitutes = {[key: string]: string[]};
+
 export interface RecipeStep {
   number: number;
   title: string;
   description: string;
+  substitutes?: RecipeStepSubstitutes;
 }
 
 export interface RecipeIngredient {
@@ -161,6 +164,19 @@ export interface StreakInfo {
   currentStreak: number;
   longestStreak: number;
   totalCooked: number;
+}
+
+export interface AiSeedInput {
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  count?: number;
+}
+
+export interface AiSeedResult {
+  generated: number;
+  recipes: RecipeSummary[];
 }
 
 export interface NutritionStats {

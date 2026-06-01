@@ -4,6 +4,7 @@ export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface RecipeIngredient {
   name: string;
+  emoji: string;
   amount: string;
   substitutes: string[];
 }
@@ -37,7 +38,8 @@ const EXAMPLE_JSON = `{
   "cuisine": "Italian",
   "nutrition_per_serving": { "calories": 450, "protein_g": 20, "carbs_g": 45, "fat_g": 15 },
   "ingredients": [
-    { "name": "Arborio rice", "amount": "200g", "substitutes": ["jasmine rice", "short-grain rice"] }
+    { "name": "Arborio rice", "emoji": "🍚", "amount": "200g", "substitutes": ["jasmine rice", "short-grain rice"] },
+    { "name": "Tomato", "emoji": "🍅", "amount": "2 medium", "substitutes": ["canned tomatoes", "sun-dried tomatoes"] }
   ],
   "steps": [
     { "step": 1, "title": "Prepare", "instruction": "Finely chop the onion and garlic.", "alternative": "Use pre-cut frozen vegetables to save time." }

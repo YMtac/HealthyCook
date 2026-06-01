@@ -95,7 +95,7 @@ router.post("/recipes/generate", async (req, res) => {
   // Ingredients stored as {name, emoji, quantity} for compatibility
   const dbIngredients = generated.ingredients.map((ing) => ({
     name: ing.name,
-    emoji: "🥬",
+    emoji: ing.emoji ?? "🥬",
     quantity: ing.amount,
     substitutes: ing.substitutes,
   }));
@@ -201,7 +201,7 @@ router.post("/recipes/ai-seed", async (req, res) => {
 
     const seedIngredients = generated.ingredients.map((ing) => ({
       name: ing.name,
-      emoji: "🥬",
+      emoji: ing.emoji ?? "🥬",
       quantity: ing.amount,
       substitutes: ing.substitutes,
     }));

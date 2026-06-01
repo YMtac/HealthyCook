@@ -93,9 +93,9 @@ router.post("/explore/recipes/:id/generate", async (req, res) => {
   }));
 
   const dbSteps = generated.steps.map((s) => ({
-    step: s.step,
+    number: s.step,
     title: s.title,
-    instruction: s.instruction,
+    description: s.instruction,
     alternative: s.alternative,
   }));
 
@@ -145,7 +145,12 @@ function formatFull(r: typeof recipesTable.$inferSelect) {
       fat: r.fat,
     },
     ingredients: (r.ingredients as unknown[]) ?? [],
-    steps: (r.steps as unknown[]) ?? [],
+    steps: ((r.steps as any[]) ?? []).map((s: any) => ({
+      number: s.number ?? s.step,
+      title: s.title ?? "",
+      description: s.description ?? s.instruction ?? "",
+      alternative: s.alternative ?? "",
+    })),
     missingIngredients: [],
   };
 }

@@ -5,13 +5,7 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
-    "seed-explore": "tsx ./src/seed-explore.ts",
-    "fetch-explore-images": "tsx ./src/fetch-explore-images.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@workspace/db": "workspace:*",
-    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

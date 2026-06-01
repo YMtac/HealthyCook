@@ -80,19 +80,6 @@ export interface GenerateRecipeInput {
   cuisineStyle?: string;
 }
 
-export interface GeneratedRecipeIngredient {
-  name: string;
-  amount: string;
-  substitutes: string[];
-}
-
-export interface GeneratedRecipeStep {
-  step: number;
-  title: string;
-  instruction: string;
-  alternative: string;
-}
-
 export interface ShoppingItem {
   id: number;
   name: string;
@@ -192,27 +179,6 @@ export interface AiSeedResult {
   recipes: RecipeSummary[];
 }
 
-export interface ExploreRecipe {
-  id: number;
-  title: string;
-  /** @nullable */
-  cuisine?: string | null;
-  /** @nullable */
-  cuisineLabel: string | null;
-  /** @nullable */
-  difficulty: string | null;
-  /** @nullable */
-  timeMinutes: number | null;
-  /** @nullable */
-  calories: number | null;
-  /** @nullable */
-  tags: string | null;
-  /** @nullable */
-  imageUrl?: string | null;
-  /** @nullable */
-  linkedRecipeId?: number | null;
-}
-
 export interface NutritionStats {
   period: string;
   totalKcal: number;
@@ -221,12 +187,6 @@ export interface NutritionStats {
   avgFat: string;
   meals: number;
 }
-
-export type GetExploreRecipesParams = {
-cuisine?: string;
-difficulty?: string;
-limit?: number;
-};
 
 export type ListRecipesParams = {
 search?: string;

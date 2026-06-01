@@ -13,8 +13,7 @@ import {
   useGetRecommendations,
   useCreateCookingLog, useListCookingLogs, useGetCookingStreak, useGetCookingStats, useDeleteCookingLog, useUpdateCookingLog, getGetCookingStreakQueryKey, getListCookingLogsQueryKey,
   useAiSeedRecipes,
-  useGetExploreRecipes, useGenerateExploreRecipe,
-  ShoppingItem, Recipe, CookingLog, ExploreRecipe
+  ShoppingItem, Recipe, CookingLog
 } from "@workspace/api-client-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -1556,143 +1555,130 @@ function AddItemScreen({ navigate, onBack }: { navigate: (screen: ScreenState) =
 
 // ── Explore Tab ───────────────────────────────────────────────────────────
 
-const CUISINE_TABS = [
-  { label: "全部", value: null },
-  { label: "亚洲菜", value: "asian" },
-  { label: "西餐", value: "western" },
-  { label: "健康轻食", value: "healthy" },
-  { label: "混合创意", value: "fusion" },
-] as const;
-
-const DIFFICULTY_BADGE: Record<string, string> = {
-  easy: "bg-[#e8f0e8] text-[#4a7a4a]",
-  medium: "bg-[#fef3e8] text-[#c67d5a]",
-  hard: "bg-[#fce8e8] text-[#c0504a]",
-};
-
 function ExploreTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
-  const [cuisine, setCuisine] = useState<string | null>(null);
-  const [generatingId, setGeneratingId] = useState<number | null>(null);
-  const generateMutation = useGenerateExploreRecipe();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<string>("All");
+  const queryClient = useQueryClient();
+  const aiSeed = useAiSeedRecipes({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() }),
+    }
+  });
 
-  const { data: recipes = [], isLoading } = useGetExploreRecipes(
-    cuisine ? { cuisine } : {},
-  );
+  const { data: recipes = [], isLoading } = useListRecipes({ search, category: category !== "All" ? category : undefined });
 
-  const handleCardClick = (card: ExploreRecipe) => {
-    if (generatingId) return;
-    setGeneratingId(card.id);
-    generateMutation.mutate(
-      { id: card.id },
-      {
-        onSuccess: (recipe) => {
-          setGeneratingId(null);
-          navigate({ name: "recipe-detail", recipeId: recipe.id, source: "explore" });
-        },
-        onError: () => setGeneratingId(null),
-      }
-    );
-  };
+  useEffect(() => {
+    const elements = document.querySelectorAll('.reveal-card');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement).style.transitionDelay = `${i * 120}ms`;
+          (entry.target as HTMLElement).style.opacity = '1';
+          (entry.target as HTMLElement).style.transform = 'translateY(0) scale(1)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    elements.forEach(el => {
+      (el as HTMLElement).style.opacity = '0';
+      (el as HTMLElement).style.transform = 'translateY(40px) scale(0.95)';
+      (el as HTMLElement).style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
+      observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [recipes]);
+
+  const categories = ["All", "Asian", "Breakfast", "Italian", "Vegan", "General"];
 
   return (
-    <div className="flex flex-col h-full px-4 pb-32 bg-transparent overflow-y-auto relative w-full max-w-5xl mx-auto">
-      <header className="mb-6 pt-6 flex justify-between items-center">
-        <h1 className="text-[38px] font-['Fraunces'] italic text-[#2d2a26]">Explore</h1>
-        <UserAuthButton navigate={(p) => (window.location.href = p)} />
+    <div className="flex flex-col h-full p-6 pb-32 bg-transparent overflow-y-auto relative w-full max-w-5xl mx-auto">
+      <header className="mb-8 pt-4 flex justify-between items-start">
+        <h1 className="text-[40px] font-['Fraunces'] italic text-[#2d2a26]">Explore</h1>
+        <div className="flex flex-col items-end gap-2 mt-1">
+          <UserAuthButton navigate={(p) => window.location.href = p} />
+          <button
+            onClick={() => aiSeed.mutate({ data: { count: 6 } })}
+            disabled={aiSeed.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8fa68f] text-white text-xs font-['Karla'] font-semibold disabled:opacity-60 transition-all hover:bg-[#7a917a]"
+            style={{ borderRadius: '20px 10px 20px 10px' }}
+          >
+            {aiSeed.isPending ? (
+              <><Loader2 size={13} className="animate-spin" /> Generating…</>
+            ) : (
+              <><Sparkles size={13} /> AI Generate</>
+            )}
+          </button>
+        </div>
       </header>
 
-      {/* Cuisine filter tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
-        {CUISINE_TABS.map((tab) => (
+      <div className="relative mb-8">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c67d5a]" size={20} />
+        <input 
+          type="text" 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search recipes..." 
+          className="w-full bg-[#f5f0e6] pl-12 pr-4 py-4 focus:outline-none focus:ring-2 focus:ring-[#8fa68f] text-[#2d2a26] placeholder:text-[#d4c4a8] font-['Karla'] text-lg"
+          style={{ borderRadius: '40px 20px 40px 20px' }}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2 pb-2 mb-6">
+        {categories.map(c => (
           <button
-            key={tab.label}
-            onClick={() => setCuisine(tab.value)}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-['Karla'] font-semibold transition-all shrink-0 ${
-              cuisine === tab.value
-                ? "bg-[#2d2a26] text-[#faf8f5]"
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`whitespace-nowrap px-5 py-2 text-sm font-['Karla'] font-medium transition-all ${
+              category === c 
+                ? "bg-[#c67d5a] text-white" 
                 : "bg-[#f0ebe3] text-[#6b6560] hover:bg-[#d4c4a8]"
             }`}
-            style={{ borderRadius: "20px 10px 20px 10px" }}
+            style={{ borderRadius: '50% 30% 50% 30% / 30% 50% 30% 50%' }}
           >
-            {tab.label}
+            {c}
           </button>
         ))}
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-2xl bg-[#f0ebe3] animate-pulse h-56" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="h-64 bg-[#f0ebe3] animate-pulse" style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}></div>
           ))}
         </div>
       ) : recipes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="text-6xl mb-4 opacity-50">🔍</div>
           <p className="text-[#6b6560] font-['Karla'] text-lg">No recipes found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {recipes.map((card) => {
-            const isGenerating = generatingId === card.id;
-            const diff = (card.difficulty ?? "").toLowerCase();
-            return (
-              <div
-                key={card.id}
-                onClick={() => handleCardClick(card)}
-                className={`group cursor-pointer rounded-2xl overflow-hidden bg-[#faf8f5] shadow-sm border border-[#ede8df] transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
-                  isGenerating ? "opacity-70 pointer-events-none" : ""
-                }`}
-              >
-                {/* Image */}
-                <div className="relative w-full aspect-[4/3] bg-[#f0ebe3] overflow-hidden">
-                  {card.imageUrl ? (
-                    <img
-                      src={card.imageUrl}
-                      alt={card.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[#e8e2d8]" />
-                  )}
-                  {isGenerating && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <Loader2 size={28} className="animate-spin text-white" />
-                    </div>
-                  )}
-                  {card.cuisineLabel && (
-                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 text-white text-[10px] font-['Karla'] rounded-full">
-                      {card.cuisineLabel}
-                    </span>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="p-3">
-                  <h3 className="font-['Fraunces'] font-semibold text-[#2d2a26] text-sm leading-snug mb-2 line-clamp-2 group-hover:text-[#c67d5a] transition-colors">
-                    {card.title}
-                  </h3>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {card.difficulty && (
-                      <span className={`text-[10px] font-['Karla'] font-bold px-2 py-0.5 rounded-full ${DIFFICULTY_BADGE[diff] ?? "bg-[#f0ebe3] text-[#6b6560]"}`}>
-                        {card.difficulty.charAt(0).toUpperCase() + card.difficulty.slice(1)}
-                      </span>
-                    )}
-                    {card.timeMinutes != null && (
-                      <span className="flex items-center gap-0.5 text-[#6b6560] text-[10px] font-['Karla']">
-                        <Clock size={10} />
-                        {card.timeMinutes}m
-                      </span>
-                    )}
-                    {card.calories != null && (
-                      <span className="flex items-center gap-0.5 text-[#c67d5a] text-[10px] font-['Karla'] font-bold ml-auto">
-                        <Flame size={10} />
-                        {card.calories}
-                      </span>
-                    )}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {recipes.map(recipe => (
+            <div 
+              key={recipe.id} 
+              onClick={() => navigate({ name: 'recipe-detail', recipeId: recipe.id, source: 'explore' })}
+              className="reveal-card group cursor-pointer"
+            >
+              <div className="aspect-[4/5] bg-[#f5f0e6] mb-4 relative overflow-hidden transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-xl flex flex-col items-center justify-center p-4"
+                   style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}>
+                {recipe.isFavorited && (
+                  <div className="absolute top-3 right-3 bg-[#faf8f5] p-2 z-10" style={{ borderRadius: '50% 40% 60% 50% / 50% 60% 40% 50%' }}>
+                    <Heart size={16} className="fill-[#c67d5a] text-[#c67d5a]" />
                   </div>
-                </div>
+                )}
+                {recipe.imageUrl ? (
+                  <img src={recipe.imageUrl} alt={recipe.name} className="w-full h-full object-cover absolute inset-0" />
+                ) : (
+                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500">{recipe.emoji}</span>
+                )}
               </div>
-            );
-          })}
+              <h3 className="font-['Fraunces'] font-bold text-[#2d2a26] text-lg leading-tight mb-1 group-hover:text-[#c67d5a] transition-colors">{recipe.name}</h3>
+              <div className="flex items-center justify-between text-xs font-['Karla']">
+                <span className="text-[#6b6560]">{recipe.timeMinutes}m · {recipe.difficulty}</span>
+                <span className="text-[#c67d5a] font-bold">{recipe.kcal} kcal</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

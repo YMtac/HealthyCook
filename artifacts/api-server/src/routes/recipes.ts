@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, recipesTable, ingredientsTable, favoritesTable } from "@workspace/db";
 import { eq, ilike, and, lte, inArray } from "drizzle-orm";
 import { GenerateRecipeBody, ListRecipesQueryParams, GetRecipeParams } from "@workspace/api-zod";
-import { generateRecipeWithAI, generateFoodImage } from "../services/openai.js";
+import { generateRecipeFromAI, fetchUnsplashImage, generateFoodImageForSeed } from "../services/openai.js";
 
 const router = Router();
 
@@ -59,39 +59,82 @@ router.post("/recipes/generate", async (req, res) => {
 
   req.log.info({ userIngredients, difficulty, cuisineStyle }, "Generating AI recipe");
 
-  const generated = await generateRecipeWithAI({
-    availableIngredients: userIngredients,
-    timePreference: timePreference ?? undefined,
-    difficulty: difficulty ?? undefined,
-    cookingMethod: cookingMethod ?? undefined,
-    cuisineStyle: cuisineStyle ?? undefined,
-  });
+  let generated;
+  try {
+    generated = await generateRecipeFromAI({
+      ingredients: userIngredients,
+      time: timePreference ?? undefined,
+      difficulty: difficulty ?? undefined,
+      cookingMethod: cookingMethod ?? undefined,
+      cuisineStyle: cuisineStyle ?? undefined,
+    });
+  } catch (err) {
+    req.log.error({ err }, "OpenAI recipe generation failed");
+    res.status(500).json({ error: "Failed to generate recipe" });
+    return;
+  }
 
-  // Generate image in parallel with nothing — just do it
-  const imageUrl = await generateFoodImage(generated.name, generated.category);
+  // Fetch Unsplash image in parallel-ish — after OpenAI completes
+  const imageUrl = await fetchUnsplashImage(generated.title);
+
+  // Map new schema → DB columns
+  // Steps stored as {number, title, description, substitutes} for compatibility with substitution sheet
+  const dbSteps = generated.steps.map((s) => ({
+    number: s.step,
+    title: s.title,
+    description: s.instruction,
+    alternative: s.alternative,
+    // Build substitutes map from ingredients mentioned in this step
+    substitutes: Object.fromEntries(
+      generated.ingredients
+        .filter((ing) => s.instruction.toLowerCase().includes(ing.name.toLowerCase()))
+        .map((ing) => [ing.name, ing.substitutes])
+    ),
+  }));
+
+  // Ingredients stored as {name, emoji, quantity} for compatibility
+  const dbIngredients = generated.ingredients.map((ing) => ({
+    name: ing.name,
+    emoji: "🥬",
+    quantity: ing.amount,
+    substitutes: ing.substitutes,
+  }));
+
+  const kcal = generated.nutrition_per_serving.calories;
+  const protein = `${generated.nutrition_per_serving.protein_g}g`;
+  const carbs = `${generated.nutrition_per_serving.carbs_g}g`;
+  const fat = `${generated.nutrition_per_serving.fat_g}g`;
+
+  // Pick a representative emoji by cuisine
+  const cuisineEmojiMap: Record<string, string> = {
+    italian: "🍝", asian: "🥢", japanese: "🍜", chinese: "🥡", mexican: "🌮",
+    indian: "🍛", mediterranean: "🫒", american: "🍔", french: "🥐",
+    breakfast: "🍳", dessert: "🍰", soup: "🥣", salad: "🥗",
+  };
+  const emoji = cuisineEmojiMap[generated.cuisine.toLowerCase()] ?? "🍽️";
 
   const [saved] = await db
     .insert(recipesTable)
     .values({
-      name: generated.name,
-      emoji: generated.emoji,
+      name: generated.title,
+      emoji,
       imageUrl: imageUrl ?? null,
-      timeMinutes: generated.timeMinutes,
-      difficulty: generated.difficulty,
-      category: generated.category,
-      diet: generated.diet ?? null,
-      kcal: generated.nutrition.kcal,
-      protein: generated.nutrition.protein,
-      carbs: generated.nutrition.carbs,
-      fat: generated.nutrition.fat,
-      ingredients: generated.ingredients,
-      steps: generated.steps,
+      timeMinutes: generated.time_minutes,
+      difficulty: generated.difficulty.charAt(0).toUpperCase() + generated.difficulty.slice(1),
+      category: generated.cuisine,
+      diet: null,
+      kcal,
+      protein,
+      carbs,
+      fat,
+      ingredients: dbIngredients,
+      steps: dbSteps,
       isTrending: false,
     })
     .returning();
 
   req.log.info({ recipeId: saved.id, name: saved.name }, "AI recipe saved");
-  res.json(formatRecipeFull(saved, generated.missingIngredients ?? []));
+  res.json(formatRecipeFull(saved, []));
 });
 
 const SEED_CATEGORIES = [
@@ -109,19 +152,19 @@ router.post("/recipes/ai-seed", async (req, res) => {
   const categories = SEED_CATEGORIES.slice(0, count);
   const textResults = await Promise.allSettled(
     categories.map((category, i) =>
-      generateRecipeWithAI({
-        availableIngredients: [],
+      generateRecipeFromAI({
+        ingredients: [],
         cuisineStyle: category,
         difficulty: SEED_DIFFICULTIES[i % 3],
       }),
     ),
   );
 
-  // Generate images in parallel for successful text results
+  // Fetch Unsplash images in parallel for successful text results
   const imageResults = await Promise.allSettled(
     textResults.map((r) =>
       r.status === "fulfilled"
-        ? generateFoodImage(r.value.name, r.value.category)
+        ? generateFoodImageForSeed(r.value.title)
         : Promise.resolve(null),
     ),
   );
@@ -137,30 +180,56 @@ router.post("/recipes/ai-seed", async (req, res) => {
     const imgResult = imageResults[i];
     const imageUrl = imgResult.status === "fulfilled" ? imgResult.value : null;
 
+    const seedCuisineEmojiMap: Record<string, string> = {
+      italian: "🍝", asian: "🥢", japanese: "🍜", chinese: "🥡", mexican: "🌮",
+      indian: "🍛", mediterranean: "🫒", american: "🍔", french: "🥐",
+      breakfast: "🍳", dessert: "🍰", soup: "🥣", salad: "🥗",
+    };
+    const seedEmoji = seedCuisineEmojiMap[generated.cuisine.toLowerCase()] ?? "🍽️";
+
+    const seedSteps = generated.steps.map((s) => ({
+      number: s.step,
+      title: s.title,
+      description: s.instruction,
+      alternative: s.alternative,
+      substitutes: Object.fromEntries(
+        generated.ingredients
+          .filter((ing) => s.instruction.toLowerCase().includes(ing.name.toLowerCase()))
+          .map((ing) => [ing.name, ing.substitutes])
+      ),
+    }));
+
+    const seedIngredients = generated.ingredients.map((ing) => ({
+      name: ing.name,
+      emoji: "🥬",
+      quantity: ing.amount,
+      substitutes: ing.substitutes,
+    }));
+
     try {
       const [saved] = await db
         .insert(recipesTable)
         .values({
-          name: generated.name,
-          emoji: generated.emoji,
+          name: generated.title,
+          emoji: seedEmoji,
           imageUrl: imageUrl ?? null,
-          timeMinutes: generated.timeMinutes,
-          difficulty: generated.difficulty,
-          category: generated.category,
-          diet: generated.diet ?? null,
-          kcal: generated.nutrition.kcal,
-          protein: generated.nutrition.protein,
-          carbs: generated.nutrition.carbs,
-          fat: generated.nutrition.fat,
-          ingredients: generated.ingredients,
-          steps: generated.steps,
+          timeMinutes: generated.time_minutes,
+          difficulty: generated.difficulty.charAt(0).toUpperCase() + generated.difficulty.slice(1),
+          category: generated.cuisine,
+          diet: null,
+          kcal: generated.nutrition_per_serving.calories,
+          protein: `${generated.nutrition_per_serving.protein_g}g`,
+          carbs: `${generated.nutrition_per_serving.carbs_g}g`,
+          fat: `${generated.nutrition_per_serving.fat_g}g`,
+          ingredients: seedIngredients,
+          steps: seedSteps,
           isTrending: i < 3,
         })
         .returning();
       recipes.push(formatRecipeSummary(saved));
       req.log.info({ recipeId: saved.id, name: saved.name }, "AI-seeded recipe saved");
     } catch (err) {
-      req.log.error({ err, name: generated.name }, "Failed to save seeded recipe");
+      req.log.error({ err, name: generated.title }, "Failed to save seeded recipe");
     }
   }
 

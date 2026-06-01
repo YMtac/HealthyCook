@@ -595,6 +595,32 @@ components:
         cuisineStyle:
           type: string
 
+    GeneratedRecipeIngredient:
+      type: object
+      required: [name, amount, substitutes]
+      properties:
+        name:
+          type: string
+        amount:
+          type: string
+        substitutes:
+          type: array
+          items:
+            type: string
+
+    GeneratedRecipeStep:
+      type: object
+      required: [step, title, instruction, alternative]
+      properties:
+        step:
+          type: integer
+        title:
+          type: string
+        instruction:
+          type: string
+        alternative:
+          type: string
+
     ShoppingItem:
       type: object
       required: [id, name, quantity, category, checked]

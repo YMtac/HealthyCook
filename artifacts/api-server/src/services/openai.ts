@@ -2,103 +2,112 @@ import OpenAI from "openai";
 
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export interface GeneratedRecipe {
+export interface RecipeIngredient {
   name: string;
-  emoji: string;
-  timeMinutes: number;
-  difficulty: string;
-  category: string;
-  diet: string | null;
-  nutrition: { kcal: number; protein: string; carbs: string; fat: string };
-  ingredients: Array<{ name: string; emoji: string; quantity: string }>;
-  steps: Array<{ number: number; title: string; description: string; substitutes?: Record<string, string[]> }>;
-  missingIngredients: string[];
+  amount: string;
+  substitutes: string[];
 }
 
-const RECIPE_SCHEMA = `{
-  "name": "Recipe Name",
-  "emoji": "🍽️",
-  "timeMinutes": 30,
-  "difficulty": "Easy",
-  "category": "Italian",
-  "diet": "Vegetarian",
-  "nutrition": { "kcal": 450, "protein": "20g", "carbs": "45g", "fat": "15g" },
-  "ingredients": [{ "name": "ingredient", "emoji": "🥕", "quantity": "200g" }],
-  "steps": [
-    {
-      "number": 1,
-      "title": "Step title",
-      "description": "Detailed step description mentioning specific ingredients.",
-      "substitutes": { "ingredient_name": ["substitute1", "substitute2", "substitute3"] }
-    }
+export interface RecipeStep {
+  step: number;
+  title: string;
+  instruction: string;
+  alternative: string;
+}
+
+export interface GeneratedRecipeData {
+  title: string;
+  time_minutes: number;
+  difficulty: string;
+  cuisine: string;
+  nutrition_per_serving: {
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+  };
+  ingredients: RecipeIngredient[];
+  steps: RecipeStep[];
+}
+
+const EXAMPLE_JSON = `{
+  "title": "Quick Tomato Basil Risotto",
+  "time_minutes": 30,
+  "difficulty": "easy",
+  "cuisine": "Italian",
+  "nutrition_per_serving": { "calories": 450, "protein_g": 20, "carbs_g": 45, "fat_g": 15 },
+  "ingredients": [
+    { "name": "Arborio rice", "amount": "200g", "substitutes": ["jasmine rice", "short-grain rice"] }
   ],
-  "missingIngredients": ["ingredient not in available list"]
+  "steps": [
+    { "step": 1, "title": "Prepare", "instruction": "Finely chop the onion and garlic.", "alternative": "Use pre-cut frozen vegetables to save time." }
+  ]
 }`;
 
-export async function generateRecipeWithAI(params: {
-  availableIngredients: string[];
-  timePreference?: string;
+export async function generateRecipeFromAI(params: {
+  ingredients: string[];
+  time?: string;
   difficulty?: string;
   cookingMethod?: string;
   cuisineStyle?: string;
-}): Promise<GeneratedRecipe> {
-  const { availableIngredients, timePreference, difficulty, cookingMethod, cuisineStyle } = params;
+}): Promise<GeneratedRecipeData> {
+  const { ingredients, time, difficulty, cookingMethod, cuisineStyle } = params;
 
   const prefLines = [
-    availableIngredients.length > 0
-      ? `Available ingredients: ${availableIngredients.join(", ")}`
-      : "Available ingredients: common pantry staples",
-    timePreference ? `Time preference: ${timePreference}` : null,
-    difficulty && difficulty !== "Any" ? `Difficulty: ${difficulty}` : null,
-    cookingMethod && cookingMethod !== "Any" ? `Cooking method: ${cookingMethod}` : null,
-    cuisineStyle && cuisineStyle !== "Any" ? `Cuisine style: ${cuisineStyle}` : null,
+    `Ingredients available: ${ingredients.length > 0 ? ingredients.join(", ") : "common pantry staples"}`,
+    time && time !== "any" ? `Time limit: ${time}` : null,
+    difficulty && difficulty !== "any" ? `Difficulty: ${difficulty}` : null,
+    cookingMethod && cookingMethod !== "any" ? `Cooking method: ${cookingMethod}` : null,
+    cuisineStyle && cuisineStyle !== "any" ? `Cuisine style: ${cuisineStyle}` : null,
   ]
     .filter(Boolean)
     .join("\n");
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
+    max_tokens: 1500,
     response_format: { type: "json_object" },
     temperature: 0.85,
     messages: [
       {
         role: "system",
         content:
-          "You are a professional chef. Generate a complete, creative, and realistic recipe. Return ONLY valid JSON matching the exact schema provided. " +
-          "difficulty must be one of: Easy, Medium, Hard. " +
-          "category must be one of: Italian, Asian, American, Mexican, Mediterranean, Indian, Breakfast, Dessert, Soup, Salad. " +
-          "diet must be one of: Vegetarian, Vegan, Gluten-Free, or null. " +
-          "Each step must include a substitutes map with 2-3 alternatives for the main ingredient(s) used in that step. " +
-          "missingIngredients should only list recipe ingredients not in the available list.",
+          "You are a professional chef. Return ONLY valid JSON with no markdown, " +
+          "no explanation, no extra text. Generate a recipe based on the user's " +
+          "ingredients and preferences. " +
+          "difficulty must be one of: easy, medium, hard. " +
+          "Each ingredient must have a substitutes array with 2-3 alternatives. " +
+          "Each step must have a practical alternative tip in the 'alternative' field. " +
+          `Return JSON matching this exact schema:\n${EXAMPLE_JSON}`,
       },
       {
         role: "user",
-        content: `Generate a recipe with these preferences:\n${prefLines}\n\nReturn JSON matching this schema:\n${RECIPE_SCHEMA}\n\nGenerate 4-7 detailed cooking steps.`,
+        content: `Generate a recipe with these preferences:\n${prefLines}\n\nReturn valid JSON only.`,
       },
     ],
   });
 
   const content = response.choices[0].message.content;
   if (!content) throw new Error("No content from OpenAI");
-  return JSON.parse(content) as GeneratedRecipe;
+  return JSON.parse(content) as GeneratedRecipeData;
 }
 
-export async function generateFoodImage(
-  recipeName: string,
-  category: string,
-): Promise<string | null> {
+export async function fetchUnsplashImage(query: string): Promise<string | null> {
+  const key = process.env.UNSPLASH_ACCESS_KEY;
+  if (!key) return null;
   try {
-    const response = await openai.images.generate({
-      model: "dall-e-2",
-      prompt: `Professional food photography of ${recipeName}, ${category} cuisine, beautifully plated, appetizing, restaurant quality, soft natural lighting, close-up shot`,
-      size: "512x512",
-      response_format: "b64_json",
-      n: 1,
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`;
+    const resp = await fetch(url, {
+      headers: { Authorization: `Client-ID ${key}` },
     });
-    const b64 = response.data?.[0]?.b64_json;
-    if (!b64) return null;
-    return `data:image/png;base64,${b64}`;
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as { results: Array<{ urls: { regular: string } }> };
+    return data.results?.[0]?.urls?.regular ?? null;
   } catch {
     return null;
   }
+}
+
+export async function generateFoodImageForSeed(recipeName: string): Promise<string | null> {
+  return fetchUnsplashImage(recipeName);
 }

@@ -1,0 +1,67 @@
+请在项目的数据库中为 Explore 页面创建 explore_recipes 表，
+并写入以下 30 条种子数据。
+
+---
+
+## 建表结构
+
+创建表 explore_recipes，字段如下：
+- id：主键，自增整数
+- title：菜名（TEXT，非空）
+- cuisine：菜系分类（TEXT）— 值为 "asian" | "western" | "healthy" | "fusion"
+- cuisine_label：菜系展示名（TEXT）— 例如 "亚洲·日式"
+- difficulty：难度（TEXT）— 值为 "easy" | "medium" | "hard"
+- time_minutes：烹饪时间（INTEGER）
+- calories：每份卡路里（INTEGER）
+- tags：标签（TEXT，存为 JSON 字符串数组）
+- image_url：食谱图片 URL（TEXT，初始为 null）
+- recipe_json：完整食谱内容（TEXT，存为 JSON 字符串，初始为 null）
+- created_at：创建时间（TIMESTAMP，默认当前时间）
+
+---
+
+## 种子数据（30 条）
+
+按以下数据写入：
+
+id | title | cuisine | cuisine_label | difficulty | time_minutes | calories | tags
+1  | Spaghetti Carbonara     | western | 西餐·意式   | easy   | 25  | 520 | ["pasta","classic"]
+2  | Chicken Teriyaki Bowl   | asian   | 亚洲·日式   | easy   | 20  | 480 | ["chicken","rice"]
+3  | Avocado Toast Deluxe    | healthy | 健康轻食     | easy   | 10  | 310 | ["vegan","breakfast"]
+4  | Korean Bibimbap         | asian   | 亚洲·韩式   | medium | 35  | 550 | ["rice","veggies"]
+5  | French Onion Soup       | western | 西餐·法式   | medium | 50  | 340 | ["soup","comfort"]
+6  | Pad Thai                | asian   | 亚洲·泰式   | medium | 30  | 490 | ["noodles","shrimp"]
+7  | Beef Wellington         | western | 西餐·英式   | hard   | 90  | 680 | ["beef","special"]
+8  | Dim Sum Basket          | asian   | 亚洲·粤式   | hard   | 75  | 420 | ["steamed","pork"]
+9  | Greek Salad Bowl        | healthy | 健康轻食     | easy   | 10  | 260 | ["salad","vegan"]
+10 | Miso Ramen              | asian   | 亚洲·日式   | hard   | 80  | 610 | ["noodles","broth"]
+11 | Margherita Pizza        | western | 西餐·意式   | medium | 40  | 560 | ["pizza","vegetarian"]
+12 | Salmon Poke Bowl        | healthy | 健康轻食     | easy   | 15  | 430 | ["fish","rice"]
+13 | Mapo Tofu               | asian   | 亚洲·川式   | medium | 25  | 370 | ["tofu","spicy"]
+14 | Beef Bourguignon        | western | 西餐·法式   | hard   | 120 | 650 | ["beef","stew"]
+15 | Quinoa Power Bowl       | healthy | 健康轻食     | easy   | 20  | 390 | ["vegan","protein"]
+16 | Vietnamese Pho          | asian   | 亚洲·越式   | hard   | 100 | 510 | ["soup","beef"]
+17 | Eggs Benedict           | western | 西餐·美式   | hard   | 35  | 580 | ["brunch","egg"]
+18 | Thai Green Curry        | asian   | 亚洲·泰式   | medium | 30  | 520 | ["curry","coconut"]
+19 | Nicoise Salad           | healthy | 健康轻食     | medium | 25  | 340 | ["salad","fish"]
+20 | Korean Fried Chicken    | asian   | 亚洲·韩式   | hard   | 50  | 640 | ["chicken","crispy"]
+21 | Mushroom Risotto        | western | 西餐·意式   | medium | 40  | 490 | ["vegetarian","rice"]
+22 | Peking Duck Wrap        | fusion  | 混合创意     | hard   | 90  | 590 | ["duck","fusion"]
+23 | Tacos al Pastor         | western | 西餐·墨式   | medium | 45  | 530 | ["pork","tacos"]
+24 | Kung Pao Shrimp         | asian   | 亚洲·川式   | easy   | 20  | 360 | ["shrimp","spicy"]
+25 | Crème Brûlée            | western | 西餐·法式   | hard   | 60  | 420 | ["dessert","sweet"]
+26 | Mango Sticky Rice       | fusion  | 混合创意     | easy   | 30  | 450 | ["dessert","sweet"]
+27 | Kimchi Quesadilla       | fusion  | 混合创意     | easy   | 15  | 410 | ["fusion","cheese"]
+28 | Ramen Burger            | fusion  | 混合创意     | medium | 40  | 620 | ["fusion","beef"]
+29 | Truffle Pasta           | western | 西餐·意式   | easy   | 20  | 540 | ["pasta","luxury"]
+30 | Dragon Roll Salad       | fusion  | 混合创意     | medium | 35  | 380 | ["fusion","fish"]
+
+---
+
+## 要求
+
+- 根据项目当前使用的数据库类型（PostgreSQL / SQLite）选择正确语法
+- 建表前先检查表是否存在（CREATE TABLE IF NOT EXISTS）
+- 写入前先清空旧数据（DELETE FROM explore_recipes）
+- 将建表和 seed 脚本保存为 db/seed_explore.js（或 .py），并提供一个运行指令
+- 运行成功后在终端打印："✅ Seeded 30 explore recipes"

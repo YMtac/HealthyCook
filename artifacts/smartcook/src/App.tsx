@@ -250,7 +250,7 @@ function ScreenWrapper({ children, isActive }: { children: React.ReactNode, isAc
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
-          className="absolute inset-0 bg-transparent overflow-y-auto z-10 pb-52 md:pb-6"
+          className="absolute inset-0 bg-transparent overflow-y-auto z-10 pb-24 md:pb-6"
         >
           {children}
         </motion.div>
@@ -444,7 +444,7 @@ function CookTab({ navigate }: { navigate: (screen: ScreenState) => void }) {
         </div>
 
         {topFavorites.length > 0 && (
-          <div className="mt-12 mb-4">
+          <div className="mt-12 mb-32">
             <div className="flex items-center justify-between mb-4">
               <h3 className="uppercase tracking-widest text-[11px] font-['Karla'] text-[#c67d5a]">Top Favourites</h3>
               <button

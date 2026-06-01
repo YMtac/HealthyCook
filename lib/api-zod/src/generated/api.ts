@@ -45,6 +45,69 @@ export const DeleteIngredientParams = zod.object({
 
 
 /**
+ * @summary List curated explore recipes with optional filters
+ */
+export const getExploreRecipesQueryLimitDefault = 30;
+
+export const GetExploreRecipesQueryParams = zod.object({
+  "cuisine": zod.coerce.string().optional(),
+  "difficulty": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getExploreRecipesQueryLimitDefault)
+})
+
+export const GetExploreRecipesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "cuisine": zod.string().nullish(),
+  "cuisineLabel": zod.string().nullable(),
+  "difficulty": zod.string().nullable(),
+  "timeMinutes": zod.number().nullable(),
+  "calories": zod.number().nullable(),
+  "tags": zod.string().nullable(),
+  "imageUrl": zod.string().nullish(),
+  "linkedRecipeId": zod.number().nullish()
+})
+export const GetExploreRecipesResponse = zod.array(GetExploreRecipesResponseItem)
+
+
+/**
+ * @summary Generate or retrieve the full recipe for an explore card
+ */
+export const GenerateExploreRecipeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GenerateExploreRecipeResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "emoji": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "timeMinutes": zod.number(),
+  "difficulty": zod.string(),
+  "category": zod.string(),
+  "diet": zod.string().nullish(),
+  "nutrition": zod.object({
+  "kcal": zod.number(),
+  "protein": zod.string(),
+  "carbs": zod.string(),
+  "fat": zod.string()
+}),
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "emoji": zod.string(),
+  "quantity": zod.string()
+})),
+  "steps": zod.array(zod.object({
+  "number": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "substitutes": zod.record(zod.string(), zod.array(zod.string())).optional()
+})),
+  "missingIngredients": zod.array(zod.string()).optional()
+})
+
+
+/**
  * @summary Generate a recipe from current ingredients and preferences using AI
  */
 export const GenerateRecipeBody = zod.object({

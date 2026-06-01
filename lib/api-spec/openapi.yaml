@@ -11,6 +11,7 @@ tags:
   - name: health
   - name: ingredients
   - name: recipes
+  - name: explore
   - name: shopping
   - name: favorites
   - name: recommendations
@@ -76,6 +77,54 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /explore/recipes:
+    get:
+      operationId: getExploreRecipes
+      tags: [explore]
+      summary: List curated explore recipes with optional filters
+      parameters:
+        - name: cuisine
+          in: query
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: List of explore recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExploreRecipe"
+
+  /explore/recipes/{id}/generate:
+    post:
+      operationId: generateExploreRecipe
+      tags: [explore]
+      summary: Generate or retrieve the full recipe for an explore card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full recipe (from recipes table)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
 
   /recipes/generate:
     post:
@@ -785,6 +834,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RecipeSummary"
+
+    ExploreRecipe:
+      type: object
+      required: [id, title, cuisineLabel, difficulty, timeMinutes, calories, tags]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        cuisine:
+          type: ["string", "null"]
+        cuisineLabel:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+        timeMinutes:
+          type: ["integer", "null"]
+        calories:
+          type: ["integer", "null"]
+        tags:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        linkedRecipeId:
+          type: ["integer", "null"]
 
     NutritionStats:
       type: object

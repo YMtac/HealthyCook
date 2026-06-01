@@ -24,9 +24,11 @@ import type {
   AiSeedResult,
   CookingLog,
   CookingLogInput,
+  ExploreRecipe,
   FavoriteStatus,
   GenerateRecipeInput,
   GetCookingStatsParams,
+  GetExploreRecipesParams,
   HealthStatus,
   Ingredient,
   IngredientInput,
@@ -348,6 +350,160 @@ export const useDeleteIngredient = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteIngredientMutationOptions(options));
+    }
+
+export const getGetExploreRecipesUrl = (params?: GetExploreRecipesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/explore/recipes?${stringifiedParams}` : `/api/explore/recipes`
+}
+
+/**
+ * @summary List curated explore recipes with optional filters
+ */
+export const getExploreRecipes = async (params?: GetExploreRecipesParams, options?: RequestInit): Promise<ExploreRecipe[]> => {
+
+  return customFetch<ExploreRecipe[]>(getGetExploreRecipesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetExploreRecipesQueryKey = (params?: GetExploreRecipesParams,) => {
+    return [
+    `/api/explore/recipes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetExploreRecipesQueryOptions = <TData = Awaited<ReturnType<typeof getExploreRecipes>>, TError = ErrorType<unknown>>(params?: GetExploreRecipesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExploreRecipes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExploreRecipesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExploreRecipes>>> = ({ signal }) => getExploreRecipes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExploreRecipes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetExploreRecipesQueryResult = NonNullable<Awaited<ReturnType<typeof getExploreRecipes>>>
+export type GetExploreRecipesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List curated explore recipes with optional filters
+ */
+
+export function useGetExploreRecipes<TData = Awaited<ReturnType<typeof getExploreRecipes>>, TError = ErrorType<unknown>>(
+ params?: GetExploreRecipesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExploreRecipes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetExploreRecipesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGenerateExploreRecipeUrl = (id: number,) => {
+
+
+
+
+  return `/api/explore/recipes/${id}/generate`
+}
+
+/**
+ * @summary Generate or retrieve the full recipe for an explore card
+ */
+export const generateExploreRecipe = async (id: number, options?: RequestInit): Promise<Recipe> => {
+
+  return customFetch<Recipe>(getGenerateExploreRecipeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getGenerateExploreRecipeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateExploreRecipe>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateExploreRecipe>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['generateExploreRecipe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateExploreRecipe>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  generateExploreRecipe(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateExploreRecipeMutationResult = NonNullable<Awaited<ReturnType<typeof generateExploreRecipe>>>
+
+    export type GenerateExploreRecipeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate or retrieve the full recipe for an explore card
+ */
+export const useGenerateExploreRecipe = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateExploreRecipe>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateExploreRecipe>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getGenerateExploreRecipeMutationOptions(options));
     }
 
 export const getGenerateRecipeUrl = () => {

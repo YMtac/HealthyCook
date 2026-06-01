@@ -11,6 +11,7 @@ export const exploreRecipesTable = pgTable("explore_recipes", {
   tags: text("tags"),
   imageUrl: text("image_url"),
   recipeJson: text("recipe_json"),
+  linkedRecipeId: integer("linked_recipe_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

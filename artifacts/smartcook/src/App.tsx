@@ -1737,6 +1737,9 @@ function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) 
 
   const stats = view === 'week' ? statsWeek : view === 'month' ? statsMonth : statsYear;
 
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
   // Index logs by date: 'YYYY-MM-DD' -> CookingLog[]
   const logsByDate = useMemo(() => {
     const map: Record<string, CookingLog[]> = {};
@@ -1748,8 +1751,18 @@ function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) 
     return map;
   }, [logs]);
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  // Today's nutrition summary
+  const todayNutrition = useMemo(() => {
+    const parseG = (s: string) => parseInt(s?.replace(/[^0-9]/g, '') || '0', 10);
+    const todayLogs = logsByDate[todayStr] ?? [];
+    return {
+      meals: todayLogs.length,
+      kcal: todayLogs.reduce((sum, log) => sum + (log.kcal ?? 0), 0),
+      protein: todayLogs.reduce((sum, log) => sum + parseG(log.protein), 0),
+      carbs: todayLogs.reduce((sum, log) => sum + parseG(log.carbs), 0),
+      fat: todayLogs.reduce((sum, log) => sum + parseG(log.fat), 0),
+    };
+  }, [logsByDate, todayStr]);
 
   // Selected date logs
   const selectedLogs = selectedDate ? (logsByDate[selectedDate] ?? []) : [];
@@ -2075,6 +2088,58 @@ function CalendarTab({ navigate }: { navigate: (screen: ScreenState) => void }) 
     <div className="flex flex-col h-full p-6 pb-32 bg-transparent overflow-y-auto w-full max-w-2xl mx-auto">
       <header className="pt-4 mb-6">
         <h1 className="text-[40px] font-['Fraunces'] italic text-[#2d2a26] mb-4">Calendar</h1>
+
+        {/* ── Today's Nutrition Card ── */}
+        <div className="bg-[#f5f0e6] p-5 mb-5" style={{ borderRadius: '24px 40px 24px 40px' }}>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-['Karla'] uppercase tracking-widest text-[#c67d5a] font-semibold">
+              Today's Nutrition
+            </span>
+            <span className="text-[10px] font-['Karla'] text-[#b0a898]">
+              {today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {todayNutrition.meals > 0 && ` · ${todayNutrition.meals} meal${todayNutrition.meals > 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          {todayNutrition.meals === 0 ? (
+            <p className="text-[13px] font-['Karla'] text-[#b0a898] text-center py-2">No meals logged today</p>
+          ) : (
+            <>
+              {/* Kcal big number */}
+              <div className="flex items-end gap-1 mb-5">
+                <span className="text-[48px] font-['Fraunces'] font-bold text-[#c67d5a] leading-none">{todayNutrition.kcal}</span>
+                <span className="text-[13px] font-['Karla'] text-[#6b6560] mb-2">kcal</span>
+                <div className="ml-auto text-right">
+                  <div className="text-[11px] font-['Karla'] text-[#6b6560]">Goal</div>
+                  <div className="text-[13px] font-['Karla'] font-semibold text-[#b0a898]">2000 kcal</div>
+                </div>
+              </div>
+
+              {/* Macro bars */}
+              {([
+                { label: 'Protein', value: todayNutrition.protein, goal: 50, color: '#8fa68f' },
+                { label: 'Carbs',   value: todayNutrition.carbs,   goal: 260, color: '#c67d5a' },
+                { label: 'Fat',     value: todayNutrition.fat,     goal: 78,  color: '#d4b896' },
+              ] as const).map(({ label, value, goal, color }) => {
+                const pct = Math.min(100, Math.round((value / goal) * 100));
+                return (
+                  <div key={label} className="mb-3 last:mb-0">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[11px] font-['Karla'] font-semibold text-[#6b6560] uppercase tracking-wider">{label}</span>
+                      <span className="text-[11px] font-['Karla'] text-[#6b6560]">{value}g <span className="text-[#b0a898]">/ {goal}g</span></span>
+                    </div>
+                    <div className="h-2 bg-[#e8e0d4] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
 
         {streak && (
           <div className="flex items-center gap-4 bg-[#f5f0e6] p-4 mb-6" style={{ borderRadius: '20px 40px 20px 40px' }}>

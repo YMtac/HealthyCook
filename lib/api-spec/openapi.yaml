@@ -186,6 +186,21 @@ paths:
                 $ref: "#/components/schemas/Recipe"
         "404":
           description: Not found
+    delete:
+      operationId: deleteRecipe
+      tags: [recipes]
+      summary: Delete a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
 
   /shopping:
     get:

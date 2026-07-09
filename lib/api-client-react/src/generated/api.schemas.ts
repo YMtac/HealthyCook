@@ -80,6 +80,19 @@ export interface GenerateRecipeInput {
   cuisineStyle?: string;
 }
 
+export interface GeneratedRecipeIngredient {
+  name: string;
+  amount: string;
+  substitutes: string[];
+}
+
+export interface GeneratedRecipeStep {
+  step: number;
+  title: string;
+  instruction: string;
+  alternative: string;
+}
+
 export interface ShoppingItem {
   id: number;
   name: string;

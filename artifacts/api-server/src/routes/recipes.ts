@@ -276,4 +276,19 @@ router.get("/recipes/:id", async (req, res) => {
   res.json(formatRecipeFull(row));
 });
 
+router.delete("/recipes/:id", async (req, res) => {
+  const parsed = GetRecipeParams.safeParse({ id: Number(req.params.id) });
+  if (!parsed.success) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [deleted] = await db
+    .delete(recipesTable)
+    .where(eq(recipesTable.id, parsed.data.id))
+    .returning();
+
+  if (!deleted) { res.status(404).json({ error: "Recipe not found" }); return; }
+
+  req.log.info({ recipeId: deleted.id, name: deleted.name }, "Recipe deleted");
+  res.status(204).send();
+});
+
 export default router;

@@ -192,6 +192,14 @@ export const GetRecipeResponse = zod.object({
 
 
 /**
+ * @summary Delete a recipe
+ */
+export const DeleteRecipeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Get all shopping list items
  */
 export const ListShoppingItemsResponseItem = zod.object({

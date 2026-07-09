@@ -11,6 +11,8 @@ export * from './aiSeedResult';
 export * from './cookingLog';
 export * from './cookingLogInput';
 export * from './favoriteStatus';
+export * from './generatedRecipeIngredient';
+export * from './generatedRecipeStep';
 export * from './generateRecipeInput';
 export * from './getCookingStatsParams';
 export * from './getCookingStatsPeriod';
